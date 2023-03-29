@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use ic_cdk::export::{
-    candid::{CandidType, Deserialize},
-    Principal,
-};
+use candid::{CandidType, Deserialize, Principal};
 use ic_scalable_misc::{
     enums::{
         asset_type::Asset, location_type::Location, privacy_type::Privacy, sort_type::SortDirection,
@@ -105,7 +102,7 @@ pub enum EventFilter {
     CreatedOn(DateRange),
 }
 
-#[derive(Clone, Debug, CandidType, Deserialize)]
+#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct EventResponse {
     pub identifier: Principal,
     pub name: String,

@@ -1,0 +1,152 @@
+type Address = record {
+  street : text;
+  country : text;
+  city : text;
+  postal_code : text;
+  label : text;
+  state_or_province : text;
+  house_number : text;
+  house_number_addition : text;
+};
+type ApiError = variant {
+  SerializeError : ErrorMessage;
+  DeserializeError : ErrorMessage;
+  NotFound : ErrorMessage;
+  ValidationError : vec ValidationResponse;
+  CanisterAtCapacity : ErrorMessage;
+  UpdateRequired : UpdateMessage;
+  Unauthorized : ErrorMessage;
+  Unexpected : ErrorMessage;
+  BadRequest : ErrorMessage;
+};
+type Asset = variant { Url : text; None; CanisterStorage : CanisterStorage };
+type CanisterStorage = variant { None; Manifest : Manifest; Chunk : ChunkData };
+type ChunkData = record {
+  chunk_id : nat64;
+  canister : principal;
+  index : nat64;
+};
+type DateRange = record { end_date : nat64; start_date : nat64 };
+type ErrorMessage = record {
+  tag : text;
+  message : text;
+  inputs : opt vec text;
+  location : text;
+};
+type EventFilter = variant {
+  Tag : nat32;
+  UpdatedOn : DateRange;
+  Name : text;
+  Identifiers : vec principal;
+  IsCanceled : bool;
+  StartDate : DateRange;
+  Owner : principal;
+  CreatedOn : DateRange;
+  EndDate : DateRange;
+};
+type EventResponse = record {
+  updated_on : nat64;
+  banner_image : Asset;
+  owner : principal;
+  date : DateRange;
+  attendee_count : nat64;
+  name : text;
+  tags : vec nat32;
+  description : text;
+  created_by : principal;
+  created_on : nat64;
+  website : text;
+  privacy : Privacy;
+  is_canceled : record { bool; text };
+  image : Asset;
+  identifier : principal;
+  location : Location;
+  is_deleted : bool;
+};
+type EventSort = variant {
+  UpdatedOn : SortDirection;
+  AttendeeCount : SortDirection;
+  StartDate : SortDirection;
+  CreatedOn : SortDirection;
+  EndDate : SortDirection;
+};
+type FilterType = variant { Or; And };
+type Gated = record {
+  "principal" : principal;
+  name : text;
+  description : text;
+  amount : nat64;
+  standard : text;
+};
+type HttpHeader = record { value : text; name : text };
+type HttpRequest = record {
+  url : text;
+  method : text;
+  body : vec nat8;
+  headers : vec record { text; text };
+};
+type HttpResponse = record {
+  status : nat;
+  body : vec nat8;
+  headers : vec HttpHeader;
+};
+type Location = variant { None; Digital : text; Physical : PhysicalLocation };
+type Manifest = record { entries : vec ChunkData };
+type PagedResponse = record {
+  total : nat64;
+  data : vec EventResponse;
+  page : nat64;
+  limit : nat64;
+  number_of_pages : nat64;
+};
+type PhysicalLocation = record {
+  longtitude : float32;
+  address : Address;
+  lattitude : float32;
+};
+type PostEvent = record {
+  banner_image : Asset;
+  date : DateRange;
+  name : text;
+  tags : vec nat32;
+  description : text;
+  website : text;
+  privacy : Privacy;
+  image : Asset;
+  location : Location;
+};
+type Privacy = variant { Gated : vec Gated; Private; Public; InviteOnly };
+type Result = variant { Ok; Err : ApiError };
+type Result_1 = variant { Ok : EventResponse; Err : ApiError };
+type Result_2 = variant { Ok : record { principal; Privacy }; Err : ApiError };
+type Result_3 = variant { Ok : PagedResponse; Err : ApiError };
+type Result_4 = variant { Ok; Err : bool };
+type SortDirection = variant { Asc; Desc };
+type UpdateMessage = record { canister_principal : principal; message : text };
+type ValidationResponse = record { field : text; message : text };
+service : (principal, text, nat64) -> {
+  __get_candid_interface_tmp_hack : () -> (text) query;
+  accept_cycles : () -> (nat64);
+  add_entry_by_parent : (vec nat8) -> (Result);
+  add_event : (PostEvent, principal, principal, principal) -> (Result_1);
+  cancel_event : (principal, text, principal, principal) -> (Result);
+  delete_event : (principal, principal, principal) -> (Result);
+  edit_event : (principal, PostEvent, principal, principal) -> (Result_1);
+  get_chunked_data : (vec EventFilter, FilterType, nat64, nat64) -> (
+      vec nat8,
+      record { nat64; nat64 },
+    ) query;
+  get_event : (principal, principal) -> (Result_1) query;
+  get_event_privacy_and_owner : (principal, principal) -> (Result_2) query;
+  get_events : (
+      nat64,
+      nat64,
+      EventSort,
+      vec EventFilter,
+      FilterType,
+      principal,
+    ) -> (Result_3) query;
+  get_events_count : (vec principal) -> (vec record { principal; nat64 }) query;
+  http_request : (HttpRequest) -> (HttpResponse) query;
+  update_attendee_count_on_event : (principal, principal, nat64) -> (Result_4);
+}

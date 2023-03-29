@@ -1,3 +1,13 @@
+type Address = record {
+  street : text;
+  country : text;
+  city : text;
+  postal_code : text;
+  label : text;
+  state_or_province : text;
+  house_number : text;
+  house_number_addition : text;
+};
 type ApiError = variant {
   SerializeError : ErrorMessage;
   DeserializeError : ErrorMessage;
@@ -8,17 +18,6 @@ type ApiError = variant {
   Unauthorized : ErrorMessage;
   Unexpected : ErrorMessage;
   BadRequest : ErrorMessage;
-};
-type ApplicationRole = variant {
-  Blocked;
-  Guest;
-  Member;
-  Banned;
-  Admin;
-  Moderator;
-  Leader;
-  Owner;
-  Watcher;
 };
 type Asset = variant { Url : text; None; CanisterStorage : CanisterStorage };
 type CanisterStorage = variant { None; Manifest : Manifest; Chunk : ChunkData };
@@ -34,10 +33,6 @@ type ChunkData = record {
   canister : principal;
   index : nat64;
 };
-type CodeOfConductDetails = record {
-  approved_date : nat64;
-  approved_version : nat64;
-};
 type DateRange = record { end_date : nat64; start_date : nat64 };
 type ErrorMessage = record {
   tag : text;
@@ -45,7 +40,51 @@ type ErrorMessage = record {
   inputs : opt vec text;
   location : text;
 };
+type EventFilter = variant {
+  Tag : nat32;
+  UpdatedOn : DateRange;
+  Name : text;
+  Identifiers : vec principal;
+  IsCanceled : bool;
+  StartDate : DateRange;
+  Owner : principal;
+  CreatedOn : DateRange;
+  EndDate : DateRange;
+};
+type EventResponse = record {
+  updated_on : nat64;
+  banner_image : Asset;
+  owner : principal;
+  date : DateRange;
+  attendee_count : nat64;
+  name : text;
+  tags : vec nat32;
+  description : text;
+  created_by : principal;
+  created_on : nat64;
+  website : text;
+  privacy : Privacy;
+  is_canceled : record { bool; text };
+  image : Asset;
+  identifier : principal;
+  location : Location;
+  is_deleted : bool;
+};
+type EventSort = variant {
+  UpdatedOn : SortDirection;
+  AttendeeCount : SortDirection;
+  StartDate : SortDirection;
+  CreatedOn : SortDirection;
+  EndDate : SortDirection;
+};
 type FilterType = variant { Or; And };
+type Gated = record {
+  "principal" : principal;
+  name : text;
+  description : text;
+  amount : nat64;
+  standard : text;
+};
 type HttpHeader = record { value : text; name : text };
 type HttpRequest = record {
   url : text;
@@ -58,70 +97,21 @@ type HttpResponse = record {
   body : vec nat8;
   headers : vec HttpHeader;
 };
+type Location = variant { None; Digital : text; Physical : PhysicalLocation };
 type Manifest = record { entries : vec ChunkData };
 type PagedResponse = record {
   total : nat64;
-  data : vec ProfileResponse;
+  data : vec EventResponse;
   page : nat64;
   limit : nat64;
   number_of_pages : nat64;
 };
-type ProfileFilter = variant {
-  Interest : nat32;
-  Email : text;
-  Skill : nat32;
-  DisplayName : text;
-  UpdatedOn : DateRange;
-  City : text;
-  FirstName : text;
-  LastName : text;
-  Cause : nat32;
-  StateOrProvince : text;
-  Country : text;
-  CreatedOn : DateRange;
-  Username : text;
+type PhysicalLocation = record {
+  longtitude : float32;
+  address : Address;
+  lattitude : float32;
 };
-type ProfilePrivacy = variant { Private; Public };
-type ProfileResponse = record {
-  updated_on : nat64;
-  profile_image : Asset;
-  "principal" : principal;
-  banner_image : Asset;
-  about : text;
-  country : text;
-  username : text;
-  interests : vec nat32;
-  city : text;
-  created_on : nat64;
-  email : text;
-  website : text;
-  display_name : text;
-  extra : text;
-  privacy : ProfilePrivacy;
-  wallets : vec WalletResponse;
-  state_or_province : text;
-  first_name : text;
-  last_name : text;
-  member_identifier : principal;
-  causes : vec nat32;
-  code_of_conduct : CodeOfConductDetails;
-  date_of_birth : nat64;
-  identifier : principal;
-  skills : vec nat32;
-  application_role : ApplicationRole;
-};
-type ProfileSort = variant {
-  Email : SortDirection;
-  DisplayName : SortDirection;
-  UpdatedOn : SortDirection;
-  City : SortDirection;
-  FirstName : SortDirection;
-  LastName : SortDirection;
-  StateOrProvince : SortDirection;
-  Country : SortDirection;
-  CreatedOn : SortDirection;
-  Username : SortDirection;
-};
+type Privacy = variant { Gated : vec Gated; Private; Public; InviteOnly };
 type Result = variant { Ok : principal; Err : ApiError };
 type Result_1 = variant { Ok : ScalableCanisterDetails; Err : text };
 type ScalableCanisterDetails = record {
@@ -134,11 +124,6 @@ type ScalableCanisterDetails = record {
 type SortDirection = variant { Asc; Desc };
 type UpdateMessage = record { canister_principal : principal; message : text };
 type ValidationResponse = record { field : text; message : text };
-type WalletResponse = record {
-  "principal" : principal;
-  provider : text;
-  is_primary : bool;
-};
 type WasmVersion = variant { None; Version : nat64; Custom };
 service : (text, principal, principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
@@ -151,9 +136,9 @@ service : (text, principal, principal) -> {
     ) -> (Result);
   get_available_canister : () -> (Result_1) query;
   get_canisters : () -> (vec ScalableCanisterDetails) query;
-  get_latest_wasm_version : () -> (WasmVersion) query;
-  get_profiles : (nat64, nat64, vec ProfileFilter, FilterType, ProfileSort) -> (
+  get_events : (nat64, nat64, vec EventFilter, FilterType, EventSort) -> (
       PagedResponse,
     ) query;
+  get_latest_wasm_version : () -> (WasmVersion) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
 }

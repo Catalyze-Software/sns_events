@@ -4,7 +4,7 @@ use ic_scalable_misc::{
     enums::filter_type::FilterType, models::paged_response_models::PagedResponse,
 };
 
-use crate::models::event_models::{EventFilter, EventResponse, EventSort};
+use shared::event_models::{EventFilter, EventResponse, EventSort};
 
 use super::store::ScalableData;
 

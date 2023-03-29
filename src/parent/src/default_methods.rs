@@ -55,7 +55,6 @@ fn init(name: String, owner: Principal, parent: Principal) {
 #[query(name = "__get_candid_interface_tmp_hack")]
 #[candid_method(query, rename = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
-    use crate::models::event_models::*;
     use candid::export_service;
     use ic_cdk::api::management_canister::http_request::HttpResponse;
     use ic_scalable_misc::enums::api_error_type::ApiError;
@@ -64,6 +63,13 @@ pub fn __export_did_tmp_() -> String {
     use ic_scalable_misc::models::canister_models::ScalableCanisterDetails;
     use ic_scalable_misc::models::http_models::HttpRequest;
     use ic_scalable_misc::models::paged_response_models::PagedResponse;
+    use shared::event_models::*;
     export_service!();
     __export_service()
+}
+
+#[test]
+pub fn candid() {
+    use ic_scalable_misc::helpers::candid_helper::save_candid;
+    save_candid(__export_did_tmp_(), String::from("parent"));
 }
