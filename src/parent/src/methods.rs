@@ -8,6 +8,9 @@ use shared::event_models::{EventFilter, EventResponse, EventSort};
 
 use super::store::ScalableData;
 
+// Method used to get all the events from the child canisters filtered, sorted and paged
+// requires composite queries to be released to mainnet
+// TODO: Add group identifier
 #[query(composite = true)]
 #[candid_method(query)]
 async fn get_events(

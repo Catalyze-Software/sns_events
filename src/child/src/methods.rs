@@ -9,6 +9,8 @@ use ic_scalable_misc::{
 use super::store::{Store, DATA};
 use shared::event_models::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent};
 
+// This method is used to add a event to the canister,
+// The method is async because it optionally creates a new canister
 #[update]
 #[candid_method(update)]
 async fn add_event(
@@ -25,6 +27,7 @@ async fn add_event(
     }
 }
 
+// This method is used to get an event
 #[query]
 #[candid_method(query)]
 fn get_event(
@@ -34,6 +37,7 @@ fn get_event(
     Store::get_event(identifier, group_identifier)
 }
 
+// This method is used to get the privacy and owner of an event
 #[query]
 #[candid_method(query)]
 fn get_event_privacy_and_owner(
@@ -43,6 +47,7 @@ fn get_event_privacy_and_owner(
     Store::get_event_privacy_and_owner(identifier, group_identifier)
 }
 
+// This method is used to get events filtered and sorted with pagination
 #[query]
 #[candid_method(query)]
 fn get_events(
@@ -63,6 +68,10 @@ fn get_events(
     ))
 }
 
+// COMPOSITE_QUERY PREPARATION
+// This methods is used by the parent canister to get filtered events the (this) child canister
+// Data serialized and send as byte array chunks ` (bytes, (start_chunk, end_chunk)) `
+// The parent canister can then deserialize the data and pass it to the frontend
 #[query]
 #[candid_method(query)]
 fn get_chunked_data(
@@ -78,12 +87,14 @@ fn get_chunked_data(
     Store::get_chunked_data(filters, filter_type, chunk, max_bytes_per_chunk)
 }
 
+// This method is used to get the amount of events for a list of groups
 #[query]
 #[candid_method(query)]
 fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
     Store::get_events_count(group_identifiers)
 }
 
+// This method is used to update an existing event
 #[update]
 #[candid_method(update)]
 async fn edit_event(
@@ -93,11 +104,12 @@ async fn edit_event(
     member_identifier: Principal,
 ) -> Result<EventResponse, ApiError> {
     match Store::can_edit(caller(), group_identifier, member_identifier).await {
-        Ok(_caller) => Store::edit_event(_caller, identifier, value),
+        Ok(_caller) => Store::edit_event(identifier, value),
         Err(err) => Err(err),
     }
 }
 
+// This method is used to delete an existing event
 #[update]
 #[candid_method(update)]
 async fn delete_event(
@@ -111,6 +123,7 @@ async fn delete_event(
     }
 }
 
+// This method is used to cancel an event
 #[update]
 #[candid_method(update)]
 async fn cancel_event(
@@ -125,6 +138,7 @@ async fn cancel_event(
     }
 }
 
+// This method is used to update the attendee count on an event (inter-canister call)
 #[update]
 #[candid_method(update)]
 pub fn update_attendee_count_on_event(

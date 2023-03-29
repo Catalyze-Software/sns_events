@@ -3,8 +3,6 @@ name = "child"
 version = "0.1.0"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
 path = "src/lib.rs"
 crate-type = ["cdylib"]
@@ -20,7 +18,6 @@ ic-cdk-macros = "0.6.0"
 serde = "1.0"
 byteorder = "1.4.3"
 
-# These dependencies are required
 ic_scalable_canister = "0.2.72"
 ic_scalable_misc = "0.2.40"
 shared = { path = "../shared" }

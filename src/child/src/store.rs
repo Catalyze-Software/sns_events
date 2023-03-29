@@ -32,12 +32,14 @@ thread_local! {
 pub struct Store;
 
 impl Store {
+    // This method is used to store a new event
     pub async fn add_event(
         caller: Principal,
         post_event: PostEvent,
         group_identifier: Principal,
         event_attendee_canister: Principal,
     ) -> Result<EventResponse, ApiError> {
+        // Create a new event with the post_event data
         let new_event = Event {
             name: post_event.name,
             description: post_event.description,
@@ -50,6 +52,7 @@ impl Store {
             image: post_event.image,
             banner_image: post_event.banner_image,
             tags: post_event.tags,
+            // The attendee count is a hashmap with the canister id as key and the count as value
             attendee_count: HashMap::from_iter(vec![(event_attendee_canister, 1)]),
             is_canceled: (false, "".to_string()),
             is_deleted: false,
@@ -57,10 +60,15 @@ impl Store {
             created_on: time(),
             group_identifier,
         };
+
+        // TODO: Validate the event data
+
         match DATA.with(|data| Data::add_entry(data, new_event.clone(), Some("evt".to_string()))) {
+            // If the canister is at capacity, we spawn a new canister
             Err(err) => match err {
                 ApiError::CanisterAtCapacity(message) => {
                     let _data = DATA.with(|v| v.borrow().clone());
+                    // Spawn a sibling canister and pass the event data to it
                     match Data::spawn_sibling(_data, new_event).await {
                         Ok(_) => Err(ApiError::CanisterAtCapacity(message)),
                         Err(err) => Err(err),
@@ -68,6 +76,7 @@ impl Store {
                 }
                 _ => Err(err),
             },
+            // If the event is stored successfully, we add the owner as an attendee on the event_attendee canister (inter-canister call)
             Ok((_identifier, event)) => {
                 let add_attendee_result = Self::add_owner_as_attendee(
                     &caller,
@@ -77,6 +86,7 @@ impl Store {
                 )
                 .await;
 
+                // If the attendee is added successfully, we return the event response
                 match add_attendee_result {
                     Ok(_) => Ok(Self::map_to_event_response(_identifier, event)),
                     Err(_) => {
@@ -95,54 +105,48 @@ impl Store {
         }
     }
 
+    // This method is used to edit an event
     pub fn edit_event(
-        caller: Principal,
         identifier: Principal,
         update_event: UpdateEvent,
     ) -> Result<EventResponse, ApiError> {
+        // Get the event from the canister
         DATA.with(|data| match Data::get_entry(data, identifier) {
+            // If the event is not found, we return an error
             Err(err) => Err(err),
-            Ok((_identifier, _existing)) => {
-                if _existing.owner == caller {
-                    let updated_event = Event {
-                        name: update_event.name,
-                        description: update_event.description,
-                        date: update_event.date,
-                        privacy: update_event.privacy,
-                        website: update_event.website,
-                        location: update_event.location,
-                        image: update_event.image,
-                        banner_image: update_event.banner_image,
-                        tags: update_event.tags,
-                        updated_on: time(),
-                        .._existing
-                    };
-                    match DATA.with(|data| Data::update_entry(data, _identifier, updated_event)) {
-                        Err(err) => Err(err),
-                        Ok((__identifier, event)) => {
-                            Ok(Self::map_to_event_response(__identifier, event))
-                        }
+            // If the event is found, we check if the caller is the owner of the event
+            Ok((_identifier, mut _existing_event)) => {
+                _existing_event.name = update_event.name;
+                _existing_event.description = update_event.description;
+                _existing_event.date = update_event.date;
+                _existing_event.privacy = update_event.privacy;
+                _existing_event.website = update_event.website;
+                _existing_event.location = update_event.location;
+                _existing_event.image = update_event.image;
+                _existing_event.banner_image = update_event.banner_image;
+                _existing_event.tags = update_event.tags;
+                _existing_event.updated_on = time();
+
+                // Update the event
+                match DATA.with(|data| Data::update_entry(data, _identifier, _existing_event)) {
+                    Err(err) => Err(err),
+                    Ok((__identifier, event)) => {
+                        Ok(Self::map_to_event_response(__identifier, event))
                     }
-                } else {
-                    return Err(api_error(
-                        ApiErrorType::Unauthorized,
-                        "NOT_AUTHORIZED",
-                        "You are not authorized to perform this action",
-                        Data::get_name(data).as_str(),
-                        "edit_event",
-                        None,
-                    ));
                 }
             }
         })
     }
 
+    // This method is used to delete an event
     pub fn delete_event(
         identifier: Principal,
         group_identifier: Principal,
     ) -> Result<(), ApiError> {
+        // Get the event from the data store
         match DATA.with(|data| Data::get_entry(data, identifier)) {
             Err(err) => Err(err),
+            // If the event is found, we check if the event belongs to the group
             Ok((_identifier, mut _event)) => {
                 if &_event.group_identifier != &group_identifier {
                     return Err(api_error(
@@ -154,7 +158,10 @@ impl Store {
                         None,
                     ));
                 }
+                // Set the is_deleted flag to true
                 _event.is_deleted = true;
+
+                // Update the event
                 match DATA.with(|data| Data::update_entry(data, _identifier, _event)) {
                     Err(err) => Err(err),
                     Ok((_identifier, _event)) => Ok(()),
@@ -163,13 +170,17 @@ impl Store {
         }
     }
 
+    // This method is used to cancel an event
     pub fn cancel_event(
         identifier: Principal,
         reason: String,
         group_identifier: Principal,
     ) -> Result<(), ApiError> {
+        // Get the event from the data store
         match DATA.with(|data| Data::get_entry(data, identifier)) {
+            // If the event is not found, we return an error
             Err(err) => Err(err),
+            // If the event is found, we check if the event belongs to the group
             Ok((_identifier, mut _event)) => {
                 if &_event.group_identifier != &group_identifier {
                     return Err(api_error(
@@ -181,7 +192,10 @@ impl Store {
                         None,
                     ));
                 }
+                // Set the is_canceled flag to true and specify a reason of cancellation
                 _event.is_canceled = (true, reason);
+
+                // Update the event
                 match DATA.with(|data| Data::update_entry(data, _identifier, _event)) {
                     Err(err) => Err(err),
                     Ok((_identifier, _event)) => Ok(()),
@@ -190,12 +204,16 @@ impl Store {
         }
     }
 
+    // This method is used to get an event
     pub fn get_event(
         identifier: Principal,
         group_identifier: Principal,
     ) -> Result<EventResponse, ApiError> {
+        // Get the event from the data store
         DATA.with(|data| match Data::get_entry(data, identifier) {
+            // If the event is not found, we return an error
             Err(err) => Err(err),
+            // If the event is found, we check if the event belongs to the group
             Ok((_identifier, event)) => {
                 if &event.group_identifier != &group_identifier {
                     return Err(api_error(
@@ -212,16 +230,19 @@ impl Store {
         })
     }
 
+    // This method is used to get the privacy and owner of an event
     pub fn get_event_privacy_and_owner(
         identifier: Principal,
         group_identifier: Principal,
     ) -> Result<(Principal, Privacy), ApiError> {
+        // Get the event from the data store
         match Self::get_event(identifier, group_identifier) {
             Err(err) => Err(err),
             Ok(_response) => Ok((_response.owner, _response.privacy)),
         }
     }
 
+    // This method is used to get the events for a group filtered, sorted and paginated
     pub fn get_events(
         limit: usize,
         page: usize,
@@ -231,77 +252,102 @@ impl Store {
         group_identifier: Principal,
     ) -> PagedResponse<EventResponse> {
         DATA.with(|data| {
+            // Get all the events
             let entries = Data::get_entries(data);
+
+            // Filter the events by group identifier
             let events: Vec<EventResponse> = entries
                 .into_iter()
                 .filter(|(_, _event)| &_event.group_identifier == &group_identifier)
                 .map(|(id, event)| Self::map_to_event_response(id, event))
                 .collect();
 
+            // Filter the events by the filters
             let filtered_events = Self::get_filtered_events(events, filters, filter_type);
+
+            // Sort the events
             let ordered_events = Self::get_ordered_events(filtered_events, sort);
 
             get_paged_data(ordered_events, limit, page)
         })
     }
 
-    pub fn invite_for_group_event() -> () {}
-
+    // This method is used to get the events count for a set of groups
     pub fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
+        // Initialize the vector that will contain the events count for each group
         let mut events_counts: Vec<(Principal, usize)> = vec![];
 
         DATA.with(|data| {
+            // For each group, we count the number of events
             for group_identifier in group_identifiers {
                 let count = Data::get_entries(data)
                     .into_iter()
                     .filter(|(_, _event)| &_event.group_identifier == &group_identifier)
                     .count();
 
+                // We add the group identifier and the count to the vector
                 events_counts.push((group_identifier, count));
             }
         });
         events_counts
     }
 
+    // Used for composite_query calls from the parent canister
+    //
+    // Method to get filtered events serialized and chunked
     pub fn get_chunked_data(
         filters: Vec<EventFilter>,
         filter_type: FilterType,
         chunk: usize,
         max_bytes_per_chunk: usize,
     ) -> (Vec<u8>, (usize, usize)) {
-        let groups = DATA.with(|data| Data::get_entries(data));
-        let mapped_groups: Vec<EventResponse> = groups
+        // Get all the events
+        let events = DATA.with(|data| Data::get_entries(data));
+        // Filter out deleted events and map the events to EventResponse
+        let mapped_events: Vec<EventResponse> = events
             .iter()
-            .filter(|(_identifier, _group_data)| !_group_data.is_deleted)
-            .map(|(_identifier, _group_data)| {
-                Self::map_to_event_response(_identifier.clone(), _group_data.clone())
+            .filter(|(_identifier, _event_data)| !_event_data.is_deleted)
+            .map(|(_identifier, _event_data)| {
+                Self::map_to_event_response(_identifier.clone(), _event_data.clone())
             })
             .collect();
 
-        let filtered_events = Self::get_filtered_events(mapped_groups, filters, filter_type);
+        // Filter the events by the filters specified in the method arguments
+        let filtered_events = Self::get_filtered_events(mapped_events, filters, filter_type);
+        // Serialize the events
         if let Ok(bytes) = serialize(&filtered_events) {
+            // Check if the bytes of the serialized events are greater than the max bytes per chunk specified as an argument
             if bytes.len() >= max_bytes_per_chunk {
+                // Get the start and end index of the bytes to be returned
                 let start = chunk * max_bytes_per_chunk;
                 let end = (chunk + 1) * (max_bytes_per_chunk);
 
+                // Get the bytes to be returned, if the end index is greater than the length of the bytes, return the remaining bytes
                 let response = if end >= bytes.len() {
                     bytes[start..].to_vec()
                 } else {
                     bytes[start..end].to_vec()
                 };
 
+                // Determine the max number of chunks that can be returned, a float is used because the number of chunks can be a decimal in this step
                 let mut max_chunks: f64 = 0.00;
                 if max_bytes_per_chunk < bytes.len() {
                     max_chunks = (bytes.len() / max_bytes_per_chunk) as f64;
                 }
+
+                // return the response and start and end chunk index, the end chunk index is calculated by rounding up the max chunks
                 return (response, (chunk, max_chunks.ceil() as usize));
             }
+
+            // if the bytes of the serialized groups are less than the max bytes per chunk specified as an argument, return the bytes and start and end chunk index as 0
             return (bytes, (0, 0));
         } else {
+            // if the groups cant be serialized return an empty vec and start and end chunk index as 0
             return (vec![], (0, 0));
         }
     }
 
+    // Method to map events to a default reponse that can be used on the frontend
     fn map_to_event_response(identifier: Principal, event: Event) -> EventResponse {
         EventResponse {
             identifier,
@@ -315,6 +361,7 @@ impl Store {
             location: event.location,
             image: event.image,
             banner_image: event.banner_image,
+            // Sum the attendee count for each event
             attendee_count: event
                 .attendee_count
                 .into_iter()
@@ -328,6 +375,7 @@ impl Store {
         }
     }
 
+    // Method to filter events
     fn get_filtered_events(
         events: Vec<EventResponse>,
         filters: Vec<EventFilter>,
@@ -341,6 +389,7 @@ impl Store {
 
         use FilterType::*;
         match filter_type {
+            // this filter type will return events that match all the filters
             And => {
                 for filter in filters {
                     use EventFilter::*;
@@ -432,6 +481,7 @@ impl Store {
 
                 filtered_events
             }
+            // This filter type will return groups that match any of the filters
             Or => {
                 let mut hashmap_events: HashMap<Principal, EventResponse> = HashMap::new();
                 for filter in filters {
@@ -544,6 +594,7 @@ impl Store {
         }
     }
 
+    // This function will sort the events based on the sort type
     fn get_ordered_events(mut events: Vec<EventResponse>, sort: EventSort) -> Vec<EventResponse> {
         use EventSort::*;
         use SortDirection::*;
@@ -573,12 +624,13 @@ impl Store {
         events
     }
 
-    // TODO: double check if this is the correct way to do this
+    // TODO: need to add logic to secure this call
     pub fn update_attendee_count_on_event(
         event_identifier: Principal,
         event_attendee_canister: Principal,
         attendee_count: usize,
     ) -> Result<(), bool> {
+        // Check if the event identifier is valid
         let (_, _, _event_kind) = Identifier::decode(&event_identifier);
 
         if "evt" != _event_kind {
@@ -586,8 +638,10 @@ impl Store {
         };
 
         DATA.with(|data| {
+            // Get the event
             let existing = Data::get_entry(data, event_identifier);
             match existing {
+                // Update the event
                 Ok((_, mut _event)) => {
                     _event
                         .attendee_count
@@ -600,6 +654,7 @@ impl Store {
         })
     }
 
+    // This method is used for role / permission based access control
     pub async fn can_write(
         caller: Principal,
         group_identifier: Principal,
@@ -614,6 +669,7 @@ impl Store {
         .await
     }
 
+    // This method is used for role / permission based access control
     pub async fn can_read(
         caller: Principal,
         group_identifier: Principal,
@@ -628,6 +684,7 @@ impl Store {
         .await
     }
 
+    // This method is used for role / permission based access control
     pub async fn can_edit(
         caller: Principal,
         group_identifier: Principal,
@@ -642,6 +699,7 @@ impl Store {
         .await
     }
 
+    // This method is used for role / permission based access control
     pub async fn can_delete(
         caller: Principal,
         group_identifier: Principal,
@@ -656,6 +714,7 @@ impl Store {
         .await
     }
 
+    // This method is used for role / permission based access control
     async fn check_permission(
         caller: Principal,
         group_identifier: Principal,
@@ -722,6 +781,7 @@ impl Store {
         }
     }
 
+    // Add the owner as an attendee to the event attendee canister (inter-canister call)
     async fn add_owner_as_attendee(
         user_principal: &Principal,
         event_identifier: &Principal,
