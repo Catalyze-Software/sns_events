@@ -73,13 +73,8 @@ export type EventSort = { 'UpdatedOn' : SortDirection } |
   { 'EndDate' : SortDirection };
 export type FilterType = { 'Or' : null } |
   { 'And' : null };
-export interface Gated {
-  'principal' : Principal,
-  'name' : string,
-  'description' : string,
-  'amount' : bigint,
-  'standard' : string,
-}
+export type GatedType = { 'Neuron' : Array<NeuronGated> } |
+  { 'Token' : Array<TokenGated> };
 export interface HttpHeader { 'value' : string, 'name' : string }
 export interface HttpRequest {
   'url' : string,
@@ -96,6 +91,16 @@ export type Location = { 'None' : null } |
   { 'Digital' : string } |
   { 'Physical' : PhysicalLocation };
 export interface Manifest { 'entries' : Array<ChunkData> }
+export interface NeuronGated {
+  'governance_canister' : Principal,
+  'name' : string,
+  'description' : string,
+  'rules' : Array<NeuronGatedRules>,
+}
+export type NeuronGatedRules = { 'IsDisolving' : boolean } |
+  { 'MinStake' : bigint } |
+  { 'MinAge' : bigint } |
+  { 'MinDissolveDelay' : bigint };
 export interface PagedResponse {
   'total' : bigint,
   'data' : Array<EventResponse>,
@@ -119,7 +124,7 @@ export interface PostEvent {
   'image' : Asset,
   'location' : Location,
 }
-export type Privacy = { 'Gated' : Array<Gated> } |
+export type Privacy = { 'Gated' : GatedType } |
   { 'Private' : null } |
   { 'Public' : null } |
   { 'InviteOnly' : null };
@@ -135,6 +140,13 @@ export type Result_4 = { 'Ok' : null } |
   { 'Err' : boolean };
 export type SortDirection = { 'Asc' : null } |
   { 'Desc' : null };
+export interface TokenGated {
+  'principal' : Principal,
+  'name' : string,
+  'description' : string,
+  'amount' : bigint,
+  'standard' : string,
+}
 export interface UpdateMessage {
   'canister_principal' : Principal,
   'message' : string,

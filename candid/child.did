@@ -71,13 +71,7 @@ type EventSort = variant {
   EndDate : SortDirection;
 };
 type FilterType = variant { Or; And };
-type Gated = record {
-  "principal" : principal;
-  name : text;
-  description : text;
-  amount : nat64;
-  standard : text;
-};
+type GatedType = variant { Neuron : vec NeuronGated; Token : vec TokenGated };
 type HttpHeader = record { value : text; name : text };
 type HttpRequest = record {
   url : text;
@@ -92,6 +86,18 @@ type HttpResponse = record {
 };
 type Location = variant { None; Digital : text; Physical : PhysicalLocation };
 type Manifest = record { entries : vec ChunkData };
+type NeuronGated = record {
+  governance_canister : principal;
+  name : text;
+  description : text;
+  rules : vec NeuronGatedRules;
+};
+type NeuronGatedRules = variant {
+  IsDisolving : bool;
+  MinStake : nat64;
+  MinAge : nat64;
+  MinDissolveDelay : nat64;
+};
 type PagedResponse = record {
   total : nat64;
   data : vec EventResponse;
@@ -115,13 +121,20 @@ type PostEvent = record {
   image : Asset;
   location : Location;
 };
-type Privacy = variant { Gated : vec Gated; Private; Public; InviteOnly };
+type Privacy = variant { Gated : GatedType; Private; Public; InviteOnly };
 type Result = variant { Ok; Err : ApiError };
 type Result_1 = variant { Ok : EventResponse; Err : ApiError };
 type Result_2 = variant { Ok : record { principal; Privacy }; Err : ApiError };
 type Result_3 = variant { Ok : PagedResponse; Err : ApiError };
 type Result_4 = variant { Ok; Err : bool };
 type SortDirection = variant { Asc; Desc };
+type TokenGated = record {
+  "principal" : principal;
+  name : text;
+  description : text;
+  amount : nat64;
+  standard : text;
+};
 type UpdateMessage = record { canister_principal : principal; message : text };
 type ValidationResponse = record { field : text; message : text };
 service : (principal, text, nat64) -> {

@@ -402,7 +402,7 @@ impl ScalableData {
         version: u64,
     ) -> Result<WasmDetails, String> {
         // Get the WASM from the file system
-        let bytes = include_bytes!("../../../wasm/child.wasm").to_vec();
+        let bytes = include_bytes!("../../../wasm/child.wasm.gz").to_vec();
 
         // Check if the wasm bytes are empty
         if bytes.is_empty() {

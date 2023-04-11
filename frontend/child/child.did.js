@@ -45,15 +45,31 @@ export const idlFactory = ({ IDL }) => {
     'end_date' : IDL.Nat64,
     'start_date' : IDL.Nat64,
   });
-  const Gated = IDL.Record({
+  const NeuronGatedRules = IDL.Variant({
+    'IsDisolving' : IDL.Bool,
+    'MinStake' : IDL.Nat64,
+    'MinAge' : IDL.Nat64,
+    'MinDissolveDelay' : IDL.Nat64,
+  });
+  const NeuronGated = IDL.Record({
+    'governance_canister' : IDL.Principal,
+    'name' : IDL.Text,
+    'description' : IDL.Text,
+    'rules' : IDL.Vec(NeuronGatedRules),
+  });
+  const TokenGated = IDL.Record({
     'principal' : IDL.Principal,
     'name' : IDL.Text,
     'description' : IDL.Text,
     'amount' : IDL.Nat64,
     'standard' : IDL.Text,
   });
+  const GatedType = IDL.Variant({
+    'Neuron' : IDL.Vec(NeuronGated),
+    'Token' : IDL.Vec(TokenGated),
+  });
   const Privacy = IDL.Variant({
-    'Gated' : IDL.Vec(Gated),
+    'Gated' : GatedType,
     'Private' : IDL.Null,
     'Public' : IDL.Null,
     'InviteOnly' : IDL.Null,
