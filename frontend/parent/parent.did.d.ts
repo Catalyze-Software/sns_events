@@ -165,5 +165,4 @@ export interface _SERVICE {
   >,
   'get_latest_wasm_version' : ActorMethod<[], WasmVersion>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
-  'logs' : ActorMethod<[], Array<string>>,
 }
