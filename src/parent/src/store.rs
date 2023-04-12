@@ -73,6 +73,7 @@ impl Default for ScalableData {
 thread_local! {
     pub static DATA: RefCell<ScalableData> = RefCell::new(ScalableData::default());
 }
+
 impl ScalableData {
     // Method to retrieve an available canister to write updates to
     pub fn get_available_canister(caller: Principal) -> Result<ScalableCanisterDetails, String> {
@@ -410,29 +411,27 @@ impl ScalableData {
         }
 
         // Check if the WASM is the same as the previous one
-        if old_store.child_wasm_data.bytes == bytes {
-            return Err("WASM is the same, skipping child WASM update".to_string());
-        }
+        // if old_store.child_wasm_data.bytes == bytes {
+        //     return Err("WASM is the same, skipping child WASM update".to_string());
+        // }
 
-        // If the wasm bytes are unique
-        if old_store.child_wasm_data.bytes != bytes {
-            match old_store.child_wasm_data.wasm_version {
-                WasmVersion::None => {}
-                WasmVersion::Version(_version) => {
-                    // Check if the version is incremented
-                    if version <= _version {
-                        return Err(format!(
-                            "Please provide a higher version as {_version}, skipping child WASM update"
-                        )
-                        .to_string());
-                    }
-                }
-                // If the WASM version is custom, throw an error
-                WasmVersion::Custom => {
-                    return Err("Wrong WASM version type, skipping child WASM update".to_string())
-                }
-            }
-        }
+        // // If the wasm bytes are unique
+        // match old_store.child_wasm_data.wasm_version {
+        //     WasmVersion::None => {}
+        //     WasmVersion::Version(_version) => {
+        //         // Check if the version is incremented
+        //         if version <= _version {
+        //             return Err(format!(
+        //                 "Please provide a higher version as {_version}, skipping child WASM update"
+        //             )
+        //             .to_string());
+        //         }
+        //     }
+        //     // If the WASM version is custom, throw an error
+        //     WasmVersion::Custom => {
+        //         return Err("Wrong WASM version type, skipping child WASM update".to_string())
+        //     }
+        // }
 
         // Create the WASM details
         let details = WasmDetails {

@@ -196,6 +196,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'get_latest_wasm_version' : IDL.Func([], [WasmVersion], ['query']),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+    'logs' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
   });
 };
 export const init = ({ IDL }) => { return []; };

@@ -25,6 +25,8 @@ use shared::event_models::{Event, EventFilter, EventResponse, EventSort, PostEve
 
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator};
 
+use crate::IDENTIFIER_KIND;
+
 thread_local! {
     pub static DATA: RefCell<Data<Event>> = RefCell::new(Data::default());
 }
@@ -63,7 +65,9 @@ impl Store {
 
         // TODO: Validate the event data
 
-        match DATA.with(|data| Data::add_entry(data, new_event.clone(), Some("evt".to_string()))) {
+        match DATA.with(|data| {
+            Data::add_entry(data, new_event.clone(), Some(IDENTIFIER_KIND.to_string()))
+        }) {
             // If the canister is at capacity, we spawn a new canister
             Err(err) => match err {
                 ApiError::CanisterAtCapacity(message) => {
@@ -633,7 +637,7 @@ impl Store {
         // Check if the event identifier is valid
         let (_, _, _event_kind) = Identifier::decode(&event_identifier);
 
-        if "evt" != _event_kind {
+        if IDENTIFIER_KIND != _event_kind {
             return Err(false);
         };
 

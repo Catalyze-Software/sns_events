@@ -169,6 +169,25 @@ export const idlFactory = ({ IDL }) => {
     'body' : IDL.Vec(IDL.Nat8),
     'headers' : IDL.Vec(HttpHeader),
   });
+  const Event = IDL.Record({
+    'updated_on' : IDL.Nat64,
+    'banner_image' : Asset,
+    'group_identifier' : IDL.Principal,
+    'owner' : IDL.Principal,
+    'date' : DateRange,
+    'attendee_count' : IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Nat64)),
+    'name' : IDL.Text,
+    'tags' : IDL.Vec(IDL.Nat32),
+    'description' : IDL.Text,
+    'created_by' : IDL.Principal,
+    'created_on' : IDL.Nat64,
+    'website' : IDL.Text,
+    'privacy' : Privacy,
+    'is_canceled' : IDL.Tuple(IDL.Bool, IDL.Text),
+    'image' : Asset,
+    'location' : Location,
+    'is_deleted' : IDL.Bool,
+  });
   const Result_4 = IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Bool });
   return IDL.Service({
     '__get_candid_interface_tmp_hack' : IDL.Func([], [IDL.Text], ['query']),
@@ -227,6 +246,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+    'migration_add_events' : IDL.Func(
+        [IDL.Vec(IDL.Tuple(IDL.Principal, Event))],
+        [],
+        [],
+      ),
     'update_attendee_count_on_event' : IDL.Func(
         [IDL.Principal, IDL.Principal, IDL.Nat64],
         [Result_4],

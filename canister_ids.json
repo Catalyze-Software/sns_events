@@ -1,5 +1,8 @@
 {
   "parent": {
     "ic": "4sz2c-lyaaa-aaaap-aa4pq-cai"
+  },
+  "child": {
+    "ic": "aaaaa-aa"
   }
 }

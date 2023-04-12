@@ -149,4 +149,5 @@ service : () -> {
     ) query;
   get_latest_wasm_version : () -> (WasmVersion) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
+  logs : () -> (vec text) query;
 }
