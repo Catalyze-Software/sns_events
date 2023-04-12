@@ -13,7 +13,7 @@ for t in ${canisters[@]}; do
     dfx build --network ic $t
 
     mkdir -p wasm
-    cp -r target/wasm32-unknown-unknown/release/$t-opt.wasm wasm/$t.wasm
+    cp -r target/wasm32-unknown-unknown/release/$t.wasm wasm/$t.wasm
     gzip -c wasm/$t.wasm > wasm/$t.wasm.gz
 
     mkdir -p frontend/$t
