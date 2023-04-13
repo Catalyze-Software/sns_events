@@ -1,13 +1,12 @@
+use std::{collections::HashMap, iter::FromIterator};
+
 use candid::{candid_method, Principal};
 use ic_cdk::caller;
 use ic_cdk_macros::{query, update};
-use ic_scalable_canister::store::Data;
 use ic_scalable_misc::{
     enums::{api_error_type::ApiError, filter_type::FilterType, privacy_type::Privacy},
     models::paged_response_models::PagedResponse,
 };
-
-use crate::IDENTIFIER_KIND;
 
 use super::store::{Store, DATA};
 use shared::event_models::{Event, EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent};
@@ -16,9 +15,7 @@ use shared::event_models::{Event, EventFilter, EventResponse, EventSort, PostEve
 #[candid_method(update)]
 pub fn migration_add_events(events: Vec<(Principal, Event)>) -> () {
     DATA.with(|data| {
-        for event in events {
-            let _ = Data::add_entry(data, event.1, Some(IDENTIFIER_KIND.to_string()));
-        }
+        data.borrow_mut().entries = HashMap::from_iter(events);
     })
 }
 
