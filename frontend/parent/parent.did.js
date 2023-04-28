@@ -133,15 +133,21 @@ export const idlFactory = ({ IDL }) => {
     'address' : Address,
     'lattitude' : IDL.Float32,
   });
+  const MultiLocation = IDL.Record({
+    'physical' : PhysicalLocation,
+    'digital' : IDL.Text,
+  });
   const Location = IDL.Variant({
     'None' : IDL.Null,
     'Digital' : IDL.Text,
     'Physical' : PhysicalLocation,
+    'MultiLocation' : MultiLocation,
   });
   const EventResponse = IDL.Record({
     'updated_on' : IDL.Nat64,
     'banner_image' : Asset,
     'owner' : IDL.Principal,
+    'metadata' : IDL.Opt(IDL.Text),
     'date' : DateRange,
     'attendee_count' : IDL.Nat64,
     'name' : IDL.Text,

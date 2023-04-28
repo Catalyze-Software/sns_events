@@ -56,6 +56,7 @@ export interface EventResponse {
   'updated_on' : bigint,
   'banner_image' : Asset,
   'owner' : Principal,
+  'metadata' : [] | [string],
   'date' : DateRange,
   'attendee_count' : bigint,
   'name' : string,
@@ -94,8 +95,13 @@ export interface HttpResponse {
 }
 export type Location = { 'None' : null } |
   { 'Digital' : string } |
-  { 'Physical' : PhysicalLocation };
+  { 'Physical' : PhysicalLocation } |
+  { 'MultiLocation' : MultiLocation };
 export interface Manifest { 'entries' : Array<ChunkData> }
+export interface MultiLocation {
+  'physical' : PhysicalLocation,
+  'digital' : string,
+}
 export interface NeuronGated {
   'governance_canister' : Principal,
   'name' : string,

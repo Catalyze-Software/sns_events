@@ -61,6 +61,7 @@ impl Store {
             updated_on: time(),
             created_on: time(),
             group_identifier,
+            metadata: post_event.metadata,
         };
 
         // TODO: Validate the event data
@@ -376,6 +377,7 @@ impl Store {
             created_on: event.created_on,
             is_canceled: event.is_canceled,
             is_deleted: event.is_deleted,
+            metadata: event.metadata,
         }
     }
 

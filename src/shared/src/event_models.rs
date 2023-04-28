@@ -19,6 +19,7 @@ pub struct Event {
     pub created_by: Principal,
     pub owner: Principal,
     pub website: String,
+    #[serde(default)]
     pub location: Location,
     pub image: Asset,
     pub banner_image: Asset,
@@ -26,6 +27,8 @@ pub struct Event {
     pub is_canceled: (bool, String),
     pub is_deleted: bool,
     pub attendee_count: HashMap<Principal, usize>,
+    #[serde(default)]
+    pub metadata: Option<String>,
     pub updated_on: u64,
     pub created_on: u64,
 }
@@ -50,6 +53,7 @@ impl Default for Event {
             attendee_count: Default::default(),
             updated_on: Default::default(),
             created_on: Default::default(),
+            metadata: Default::default(),
         }
     }
 }
@@ -64,6 +68,7 @@ pub struct PostEvent {
     pub location: Location,
     pub image: Asset,
     pub banner_image: Asset,
+    pub metadata: Option<String>,
     pub tags: Vec<u32>,
 }
 
@@ -77,6 +82,7 @@ pub struct UpdateEvent {
     pub location: Location,
     pub image: Asset,
     pub banner_image: Asset,
+    pub metadata: Option<String>,
     pub tags: Vec<u32>,
 }
 
@@ -119,6 +125,7 @@ pub struct EventResponse {
     pub is_canceled: (bool, String),
     pub is_deleted: bool,
     pub tags: Vec<u32>,
+    pub metadata: Option<String>,
     pub updated_on: u64,
     pub created_on: u64,
 }

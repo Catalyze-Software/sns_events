@@ -38,6 +38,7 @@ type Event = record {
   banner_image : Asset;
   group_identifier : principal;
   owner : principal;
+  metadata : opt text;
   date : DateRange;
   attendee_count : vec record { principal; nat64 };
   name : text;
@@ -67,6 +68,7 @@ type EventResponse = record {
   updated_on : nat64;
   banner_image : Asset;
   owner : principal;
+  metadata : opt text;
   date : DateRange;
   attendee_count : nat64;
   name : text;
@@ -103,8 +105,14 @@ type HttpResponse = record {
   body : vec nat8;
   headers : vec HttpHeader;
 };
-type Location = variant { None; Digital : text; Physical : PhysicalLocation };
+type Location = variant {
+  None;
+  Digital : text;
+  Physical : PhysicalLocation;
+  MultiLocation : MultiLocation;
+};
 type Manifest = record { entries : vec ChunkData };
+type MultiLocation = record { physical : PhysicalLocation; digital : text };
 type NeuronGated = record {
   governance_canister : principal;
   name : text;
@@ -132,6 +140,7 @@ type PhysicalLocation = record {
 };
 type PostEvent = record {
   banner_image : Asset;
+  metadata : opt text;
   date : DateRange;
   name : text;
   tags : vec nat32;
