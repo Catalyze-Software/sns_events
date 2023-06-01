@@ -14,9 +14,14 @@ use shared::event_models::{Event, EventFilter, EventResponse, EventSort, PostEve
 #[update]
 #[candid_method(update)]
 pub fn migration_add_events(events: Vec<(Principal, Event)>) -> () {
-    DATA.with(|data| {
-        data.borrow_mut().entries = HashMap::from_iter(events);
-    })
+    if caller()
+        == Principal::from_text("ledm3-52ncq-rffuv-6ed44-hg5uo-iicyu-pwkzj-syfva-heo4k-p7itq-aqe")
+            .unwrap()
+    {
+        DATA.with(|data| {
+            data.borrow_mut().entries = HashMap::from_iter(events);
+        })
+    }
 }
 
 // This method is used to add a event to the canister,
