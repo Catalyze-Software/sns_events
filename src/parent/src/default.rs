@@ -32,7 +32,7 @@ pub fn post_upgrade() {
         // If the child wasm data is found, update the data in the new store
         Ok(_child_wasm_data) => {
             DATA.with(|d| {
-                old_store.child_wasm_data = _child_wasm_data.clone();
+                old_store.child_wasm_data = _child_wasm_data;
                 *d.borrow_mut() = old_store;
             });
 
