@@ -161,5 +161,13 @@ pub fn update_attendee_count_on_event(
     event_attendee_canister: Principal,
     attendee_count: usize,
 ) -> Result<(), bool> {
-    Store::update_attendee_count_on_event(event_identifier, event_attendee_canister, attendee_count)
+    let _caller = caller();
+    if _caller == event_attendee_canister {
+        return Store::update_attendee_count_on_event(
+            event_identifier,
+            event_attendee_canister,
+            attendee_count,
+        );
+    }
+    return Err(false);
 }

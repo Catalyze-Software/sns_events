@@ -630,7 +630,6 @@ impl Store {
         events
     }
 
-    // TODO: need to add logic to secure this call
     pub fn update_attendee_count_on_event(
         event_identifier: Principal,
         event_attendee_canister: Principal,
