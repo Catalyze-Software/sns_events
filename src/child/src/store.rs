@@ -129,6 +129,7 @@ impl Store {
                 _existing_event.location = update_event.location;
                 _existing_event.image = update_event.image;
                 _existing_event.banner_image = update_event.banner_image;
+                _existing_event.metadata = update_event.metadata;
                 _existing_event.tags = update_event.tags;
                 _existing_event.updated_on = time();
 
@@ -263,6 +264,7 @@ impl Store {
             // Filter the events by group identifier
             let events: Vec<EventResponse> = entries
                 .into_iter()
+                .filter(|(_, _event)| !_event.is_deleted)
                 .filter(|(_, _event)| &_event.group_identifier == &group_identifier)
                 .map(|(id, event)| Self::map_to_event_response(id, event))
                 .collect();
