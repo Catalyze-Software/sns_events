@@ -48,7 +48,7 @@ async fn add_event(
 #[candid_method(query)]
 fn get_event(
     identifier: Principal,
-    group_identifier: Principal,
+    group_identifier: Option<Principal>,
 ) -> Result<EventResponse, ApiError> {
     Store::get_event(identifier, group_identifier)
 }
@@ -72,7 +72,7 @@ fn get_events(
     sort: EventSort,
     filter: Vec<EventFilter>,
     filter_type: FilterType,
-    group_identifier: Principal,
+    group_identifier: Option<Principal>,
 ) -> Result<PagedResponse<EventResponse>, ApiError> {
     Ok(Store::get_events(
         limit,
