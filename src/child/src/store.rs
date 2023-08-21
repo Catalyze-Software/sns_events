@@ -489,7 +489,7 @@ impl Store {
 
                 filtered_events
             }
-            // This filter type will return groups that match any of the filters
+            // This filter type will return events that match any of the filters
             Or => {
                 let mut hashmap_events: HashMap<Principal, EventResponse> = HashMap::new();
                 for filter in filters {
@@ -694,24 +694,37 @@ impl Store {
     // This method is used for role / permission based access control
     pub async fn can_edit(
         caller: Principal,
+        event_identifier: Principal,
         group_identifier: Principal,
         member_identifier: Principal,
     ) -> Result<Principal, ApiError> {
-        Self::check_permission(
+        if let Ok(event) = Self::get_event(event_identifier, group_identifier) {
+            if event.owner == caller {
+                return Ok(caller);
+            }
+        }
+
+        return Self::check_permission(
             caller,
             group_identifier,
             member_identifier,
             PermissionActionType::Edit,
         )
-        .await
+        .await;
     }
 
     // This method is used for role / permission based access control
     pub async fn can_delete(
         caller: Principal,
+        event_identifier: Principal,
         group_identifier: Principal,
         member_identifier: Principal,
     ) -> Result<Principal, ApiError> {
+        if let Ok(event) = Self::get_event(event_identifier, group_identifier) {
+            if event.owner == caller {
+                return Ok(caller);
+            }
+        }
         Self::check_permission(
             caller,
             group_identifier,

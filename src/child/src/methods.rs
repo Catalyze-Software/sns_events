@@ -119,7 +119,7 @@ async fn edit_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<EventResponse, ApiError> {
-    match Store::can_edit(caller(), group_identifier, member_identifier).await {
+    match Store::can_edit(caller(), identifier, group_identifier, member_identifier).await {
         Ok(_caller) => Store::edit_event(identifier, value),
         Err(err) => Err(err),
     }
@@ -133,7 +133,7 @@ async fn delete_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    match Store::can_delete(caller(), group_identifier, member_identifier).await {
+    match Store::can_delete(caller(), identifier, group_identifier, member_identifier).await {
         Ok(_caller) => Store::delete_event(identifier, group_identifier),
         Err(err) => Err(err),
     }
@@ -148,7 +148,7 @@ async fn cancel_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    match Store::can_edit(caller(), group_identifier, member_identifier).await {
+    match Store::can_edit(caller(), identifier, group_identifier, member_identifier).await {
         Ok(_caller) => Store::cancel_event(identifier, reason, group_identifier),
         Err(err) => Err(err),
     }
