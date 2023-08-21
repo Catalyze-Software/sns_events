@@ -118,9 +118,10 @@ async fn edit_event(
     value: UpdateEvent,
     group_identifier: Principal,
     member_identifier: Principal,
+    event_attendee_canister: Principal,
 ) -> Result<EventResponse, ApiError> {
     match Store::can_edit(caller(), identifier, group_identifier, member_identifier).await {
-        Ok(_caller) => Store::edit_event(identifier, value),
+        Ok(_caller) => Store::edit_event(identifier, value, event_attendee_canister).await,
         Err(err) => Err(err),
     }
 }

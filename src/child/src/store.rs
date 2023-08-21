@@ -1,5 +1,8 @@
 use candid::Principal;
-use ic_cdk::api::{call, time};
+use ic_cdk::{
+    api::{call, time},
+    spawn,
+};
 use ic_scalable_canister::store::Data;
 use ic_scalable_misc::{
     enums::{
@@ -84,9 +87,9 @@ impl Store {
             // If the event is stored successfully, we add the owner as an attendee on the event_attendee canister (inter-canister call)
             Ok((_identifier, event)) => {
                 let add_attendee_result = Self::add_owner_as_attendee(
-                    &caller,
+                    &event.owner,
                     &_identifier,
-                    group_identifier,
+                    &group_identifier,
                     &event_attendee_canister,
                 )
                 .await;
@@ -111,12 +114,13 @@ impl Store {
     }
 
     // This method is used to edit an event
-    pub fn edit_event(
+    pub async fn edit_event(
         identifier: Principal,
         update_event: UpdateEvent,
+        event_attendee_canister: Principal,
     ) -> Result<EventResponse, ApiError> {
         // Get the event from the canister
-        DATA.with(|data| match Data::get_entry(data, identifier) {
+        let response = DATA.with(|data| match Data::get_entry(data, identifier) {
             // If the event is not found, we return an error
             Err(err) => Err(err),
             // If the event is found, we check if the caller is the owner of the event
@@ -137,12 +141,27 @@ impl Store {
                 // Update the event
                 match DATA.with(|data| Data::update_entry(data, _identifier, _existing_event)) {
                     Err(err) => Err(err),
-                    Ok((__identifier, event)) => {
-                        Ok(Self::map_to_event_response(__identifier, event))
-                    }
+                    Ok((__identifier, event)) => Ok((
+                        Ok(Self::map_to_event_response(__identifier, event.clone())),
+                        event.group_identifier.clone(),
+                    )),
                 }
             }
-        })
+        });
+
+        let _response = response.clone().unwrap();
+        let user_principal = &_response.0.unwrap().owner;
+        let group_identifier = &_response.1;
+
+        let _ = Self::add_owner_as_attendee(
+            &user_principal,
+            &identifier,
+            group_identifier,
+            &event_attendee_canister,
+        )
+        .await;
+
+        response.unwrap().0
     }
 
     // This method is used to delete an event
@@ -814,7 +833,7 @@ impl Store {
     async fn add_owner_as_attendee(
         user_principal: &Principal,
         event_identifier: &Principal,
-        group_identifier: Principal,
+        group_identifier: &Principal,
         event_attendee_canister: &Principal,
     ) -> Result<(), bool> {
         let add_owner_response: Result<(Result<(), bool>,), _> = call::call(
