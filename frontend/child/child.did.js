@@ -102,6 +102,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const PostEvent = IDL.Record({
     'banner_image' : Asset,
+    'owner' : IDL.Principal,
     'metadata' : IDL.Opt(IDL.Text),
     'date' : DateRange,
     'name' : IDL.Text,
@@ -218,7 +219,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'edit_event' : IDL.Func(
-        [IDL.Principal, PostEvent, IDL.Principal, IDL.Principal],
+        [IDL.Principal, PostEvent, IDL.Principal, IDL.Principal, IDL.Principal],
         [Result_1],
         [],
       ),
@@ -228,7 +229,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'get_event' : IDL.Func(
-        [IDL.Principal, IDL.Principal],
+        [IDL.Principal, IDL.Opt(IDL.Principal)],
         [Result_1],
         ['query'],
       ),
@@ -244,7 +245,7 @@ export const idlFactory = ({ IDL }) => {
           EventSort,
           IDL.Vec(EventFilter),
           FilterType,
-          IDL.Principal,
+          IDL.Opt(IDL.Principal),
         ],
         [Result_3],
         ['query'],

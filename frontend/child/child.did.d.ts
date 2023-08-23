@@ -142,6 +142,7 @@ export interface PhysicalLocation {
 }
 export interface PostEvent {
   'banner_image' : Asset,
+  'owner' : Principal,
   'metadata' : [] | [string],
   'date' : DateRange,
   'name' : string,
@@ -194,17 +195,24 @@ export interface _SERVICE {
   >,
   'delete_event' : ActorMethod<[Principal, Principal, Principal], Result>,
   'edit_event' : ActorMethod<
-    [Principal, PostEvent, Principal, Principal],
+    [Principal, PostEvent, Principal, Principal, Principal],
     Result_1
   >,
   'get_chunked_data' : ActorMethod<
     [Array<EventFilter>, FilterType, bigint, bigint],
     [Uint8Array | number[], [bigint, bigint]]
   >,
-  'get_event' : ActorMethod<[Principal, Principal], Result_1>,
+  'get_event' : ActorMethod<[Principal, [] | [Principal]], Result_1>,
   'get_event_privacy_and_owner' : ActorMethod<[Principal, Principal], Result_2>,
   'get_events' : ActorMethod<
-    [bigint, bigint, EventSort, Array<EventFilter>, FilterType, Principal],
+    [
+      bigint,
+      bigint,
+      EventSort,
+      Array<EventFilter>,
+      FilterType,
+      [] | [Principal],
+    ],
     Result_3
   >,
   'get_events_count' : ActorMethod<

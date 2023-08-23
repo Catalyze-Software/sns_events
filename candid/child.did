@@ -140,6 +140,7 @@ type PhysicalLocation = record {
 };
 type PostEvent = record {
   banner_image : Asset;
+  owner : principal;
   metadata : opt text;
   date : DateRange;
   name : text;
@@ -173,12 +174,14 @@ service : (principal, text, nat64) -> {
   add_event : (PostEvent, principal, principal, principal) -> (Result_1);
   cancel_event : (principal, text, principal, principal) -> (Result);
   delete_event : (principal, principal, principal) -> (Result);
-  edit_event : (principal, PostEvent, principal, principal) -> (Result_1);
+  edit_event : (principal, PostEvent, principal, principal, principal) -> (
+      Result_1,
+    );
   get_chunked_data : (vec EventFilter, FilterType, nat64, nat64) -> (
       vec nat8,
       record { nat64; nat64 },
     ) query;
-  get_event : (principal, principal) -> (Result_1) query;
+  get_event : (principal, opt principal) -> (Result_1) query;
   get_event_privacy_and_owner : (principal, principal) -> (Result_2) query;
   get_events : (
       nat64,
@@ -186,7 +189,7 @@ service : (principal, text, nat64) -> {
       EventSort,
       vec EventFilter,
       FilterType,
-      principal,
+      opt principal,
     ) -> (Result_3) query;
   get_events_count : (vec principal) -> (vec record { principal; nat64 }) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
