@@ -1,8 +1,5 @@
 use candid::Principal;
-use ic_cdk::{
-    api::{call, time},
-    spawn,
-};
+use ic_cdk::api::{call, time};
 use ic_scalable_canister::store::Data;
 use ic_scalable_misc::{
     enums::{
@@ -408,6 +405,7 @@ impl Store {
             is_canceled: event.is_canceled,
             is_deleted: event.is_deleted,
             metadata: event.metadata,
+            group_identifier: event.group_identifier,
         }
     }
 

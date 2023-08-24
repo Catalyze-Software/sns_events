@@ -130,4 +130,5 @@ pub struct EventResponse {
     pub metadata: Option<String>,
     pub updated_on: u64,
     pub created_on: u64,
+    pub group_identifier: Principal,
 }
