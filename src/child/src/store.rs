@@ -415,6 +415,12 @@ impl Store {
         filters: Vec<EventFilter>,
         filter_type: FilterType,
     ) -> Vec<EventResponse> {
+        if let FilterType::Or = filter_type {
+            if filters.len() == 0 {
+                return events;
+            }
+        }
+
         // filter out deleted events
         let mut filtered_events: Vec<EventResponse> = events
             .into_iter()
