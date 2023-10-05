@@ -1,8 +1,7 @@
 use std::time::Duration;
 
-use candid::{candid_method, Principal};
-use ic_cdk::{caller, storage, timer::set_timer};
-use ic_cdk_macros::{init, post_upgrade, pre_upgrade, query};
+use ic_cdk::{caller, init, post_upgrade, pre_upgrade, query, storage};
+use ic_cdk_timers::set_timer;
 use ic_scalable_misc::{
     helpers::logger_helper::add_log,
     models::logger_models::{LogType, PostLog},
@@ -66,7 +65,6 @@ pub fn post_upgrade() {
 
 // Init methods thats get triggered when the canister is installed
 #[init]
-#[candid_method(init)]
 fn init() {
     DATA.with(|v| {
         let mut data = v.borrow_mut();
@@ -84,9 +82,8 @@ fn init() {
 
 // Hacky way to expose the candid interface to the outside world
 #[query(name = "__get_candid_interface_tmp_hack")]
-#[candid_method(query, rename = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
-    use candid::export_service;
+    use candid::{export_service, Principal};
     use ic_cdk::api::management_canister::http_request::HttpResponse;
     use ic_scalable_misc::enums::api_error_type::ApiError;
     use ic_scalable_misc::enums::filter_type::FilterType;

@@ -27,8 +27,32 @@ use std::{cell::RefCell, collections::HashMap, iter::FromIterator};
 
 use crate::IDENTIFIER_KIND;
 
+use ic_stable_structures::{
+    memory_manager::{MemoryId, MemoryManager, VirtualMemory},
+    {DefaultMemoryImpl, StableBTreeMap, StableCell},
+};
+
+type Memory = VirtualMemory<DefaultMemoryImpl>;
+
 thread_local! {
-    pub static DATA: RefCell<Data<Event>> = RefCell::new(Data::default());
+        pub static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> =
+            RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
+
+        // NEW STABLE
+        pub static STABLE_DATA: RefCell<StableCell<Data, Memory>> = RefCell::new(
+            StableCell::init(
+                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0))),
+                Data::default(),
+            ).expect("failed")
+        );
+
+        pub static ENTRIES: RefCell<StableBTreeMap<String, Event, Memory>> = RefCell::new(
+            StableBTreeMap::init(
+                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))),
+            )
+        );
+
+    pub static DATA: RefCell<ic_scalable_misc::models::original_data::Data<Event>> = RefCell::new(ic_scalable_misc::models::original_data::Data::default());
 }
 
 pub struct Store;
@@ -66,15 +90,22 @@ impl Store {
 
         // TODO: Validate the event data
 
-        match DATA.with(|data| {
-            Data::add_entry(data, new_event.clone(), Some(IDENTIFIER_KIND.to_string()))
+        match STABLE_DATA.with(|data| {
+            ENTRIES.with(|entries| {
+                Data::add_entry(
+                    data,
+                    entries,
+                    new_event.clone(),
+                    Some(IDENTIFIER_KIND.to_string()),
+                )
+            })
         }) {
             // If the canister is at capacity, we spawn a new canister
             Err(err) => match err {
                 ApiError::CanisterAtCapacity(message) => {
-                    let _data = DATA.with(|v| v.borrow().clone());
+                    let _data = STABLE_DATA.with(|d| d.borrow().get().clone());
                     // Spawn a sibling canister and pass the event data to it
-                    match Data::spawn_sibling(_data, new_event).await {
+                    match Data::spawn_sibling(&_data, new_event).await {
                         Ok(_) => Err(ApiError::CanisterAtCapacity(message)),
                         Err(err) => Err(err),
                     }
@@ -93,14 +124,16 @@ impl Store {
 
                 // If the attendee is added successfully, we return the event response
                 match add_attendee_result {
-                    Ok(_) => Ok(Self::map_to_event_response(_identifier, event)),
+                    Ok(_) => Ok(Self::map_to_event_response(_identifier.to_string(), event)),
                     Err(_) => {
-                        DATA.with(|data| Data::remove_entry(data, &_identifier));
+                        ENTRIES.with(|entries| Data::remove_entry(entries, &_identifier));
                         return Err(api_error(
                             ApiErrorType::Unauthorized,
                             "ATTENDEE_ADD_FAILED",
                             "Storing the attendee failed",
-                            DATA.with(|data| Data::get_name(data)).as_str(),
+                            STABLE_DATA
+                                .with(|data| Data::get_name(data.borrow().get()))
+                                .as_str(),
                             "add_event",
                             None,
                         ));
@@ -117,33 +150,38 @@ impl Store {
         event_attendee_canister: Principal,
     ) -> Result<EventResponse, ApiError> {
         // Get the event from the canister
-        let response = DATA.with(|data| match Data::get_entry(data, identifier) {
-            // If the event is not found, we return an error
-            Err(err) => Err(err),
-            // If the event is found, we check if the caller is the owner of the event
-            Ok((_identifier, mut _existing_event)) => {
-                _existing_event.name = update_event.name;
-                _existing_event.description = update_event.description;
-                _existing_event.date = update_event.date;
-                _existing_event.privacy = update_event.privacy;
-                _existing_event.website = update_event.website;
-                _existing_event.location = update_event.location;
-                _existing_event.image = update_event.image;
-                _existing_event.banner_image = update_event.banner_image;
-                _existing_event.owner = update_event.owner;
-                _existing_event.metadata = update_event.metadata;
-                _existing_event.tags = update_event.tags;
-                _existing_event.updated_on = time();
+        let response = STABLE_DATA.with(|data| {
+            ENTRIES.with(|entries| match Data::get_entry(data, entries, identifier) {
+                // If the event is not found, we return an error
+                Err(err) => Err(err),
+                // If the event is found, we check if the caller is the owner of the event
+                Ok((_identifier, mut _existing_event)) => {
+                    _existing_event.name = update_event.name;
+                    _existing_event.description = update_event.description;
+                    _existing_event.date = update_event.date;
+                    _existing_event.privacy = update_event.privacy;
+                    _existing_event.website = update_event.website;
+                    _existing_event.location = update_event.location;
+                    _existing_event.image = update_event.image;
+                    _existing_event.banner_image = update_event.banner_image;
+                    _existing_event.owner = update_event.owner;
+                    _existing_event.metadata = update_event.metadata;
+                    _existing_event.tags = update_event.tags;
+                    _existing_event.updated_on = time();
 
-                // Update the event
-                match DATA.with(|data| Data::update_entry(data, _identifier, _existing_event)) {
-                    Err(err) => Err(err),
-                    Ok((__identifier, event)) => Ok((
-                        Ok(Self::map_to_event_response(__identifier, event.clone())),
-                        event.group_identifier.clone(),
-                    )),
+                    // Update the event
+                    match Data::update_entry(data, entries, _identifier, _existing_event) {
+                        Err(err) => Err(err),
+                        Ok((__identifier, event)) => Ok((
+                            Ok(Self::map_to_event_response(
+                                __identifier.to_string(),
+                                event.clone(),
+                            )),
+                            event.group_identifier.clone(),
+                        )),
+                    }
                 }
-            }
+            })
         });
 
         let _response = response.clone().unwrap();
@@ -167,7 +205,9 @@ impl Store {
         group_identifier: Principal,
     ) -> Result<(), ApiError> {
         // Get the event from the data store
-        match DATA.with(|data| Data::get_entry(data, identifier)) {
+        match STABLE_DATA
+            .with(|data| ENTRIES.with(|entries| Data::get_entry(data, entries, identifier)))
+        {
             Err(err) => Err(err),
             // If the event is found, we check if the event belongs to the group
             Ok((_identifier, mut _event)) => {
@@ -176,7 +216,9 @@ impl Store {
                         ApiErrorType::NotFound,
                         "EVENT_NOT_FOUND",
                         "No event found for this group",
-                        DATA.with(|data| Data::get_name(data)).as_str(),
+                        STABLE_DATA
+                            .with(|data| Data::get_name(data.borrow().get()))
+                            .as_str(),
                         "delete_event",
                         None,
                     ));
@@ -185,7 +227,9 @@ impl Store {
                 _event.is_deleted = true;
 
                 // Update the event
-                match DATA.with(|data| Data::update_entry(data, _identifier, _event)) {
+                match STABLE_DATA.with(|data| {
+                    ENTRIES.with(|entries| Data::update_entry(data, entries, _identifier, _event))
+                }) {
                     Err(err) => Err(err),
                     Ok((_identifier, _event)) => Ok(()),
                 }
@@ -200,7 +244,9 @@ impl Store {
         group_identifier: Principal,
     ) -> Result<(), ApiError> {
         // Get the event from the data store
-        match DATA.with(|data| Data::get_entry(data, identifier)) {
+        match STABLE_DATA
+            .with(|data| ENTRIES.with(|entries| Data::get_entry(data, entries, identifier)))
+        {
             // If the event is not found, we return an error
             Err(err) => Err(err),
             // If the event is found, we check if the event belongs to the group
@@ -210,7 +256,9 @@ impl Store {
                         ApiErrorType::NotFound,
                         "EVENT_NOT_FOUND",
                         "No event found for this group",
-                        DATA.with(|data| Data::get_name(data)).as_str(),
+                        STABLE_DATA
+                            .with(|data| Data::get_name(data.borrow().get()))
+                            .as_str(),
                         "cancel_event",
                         None,
                     ));
@@ -219,7 +267,9 @@ impl Store {
                 _event.is_canceled = (true, reason);
 
                 // Update the event
-                match DATA.with(|data| Data::update_entry(data, _identifier, _event)) {
+                match STABLE_DATA.with(|data| {
+                    ENTRIES.with(|entries| Data::update_entry(data, entries, _identifier, _event))
+                }) {
                     Err(err) => Err(err),
                     Ok((_identifier, _event)) => Ok(()),
                 }
@@ -233,26 +283,28 @@ impl Store {
         group_identifier: Option<Principal>,
     ) -> Result<EventResponse, ApiError> {
         // Get the event from the data store
-        DATA.with(|data| match Data::get_entry(data, identifier) {
-            // If the event is not found, we return an error
-            Err(err) => Err(err),
-            // If the event is found, we check if the event belongs to the group
-            Ok((_identifier, event)) => {
-                if let Some(_group_identifier) = group_identifier {
-                    if &event.group_identifier != &_group_identifier {
-                        return Err(api_error(
-                            ApiErrorType::NotFound,
-                            "EVENT_NOT_FOUND",
-                            "No event found for this group",
-                            DATA.with(|data| Data::get_name(data)).as_str(),
-                            "get_event",
-                            None,
-                        ));
+        STABLE_DATA.with(|data| {
+            ENTRIES.with(|entries| match Data::get_entry(data, entries, identifier) {
+                // If the event is not found, we return an error
+                Err(err) => Err(err),
+                // If the event is found, we check if the event belongs to the group
+                Ok((_identifier, event)) => {
+                    if let Some(_group_identifier) = group_identifier {
+                        if &event.group_identifier != &_group_identifier {
+                            return Err(api_error(
+                                ApiErrorType::NotFound,
+                                "EVENT_NOT_FOUND",
+                                "No event found for this group",
+                                Data::get_name(data.borrow().get()).as_str(),
+                                "get_event",
+                                None,
+                            ));
+                        }
+                        return Ok(Self::map_to_event_response(_identifier.to_string(), event));
                     }
-                    return Ok(Self::map_to_event_response(_identifier, event));
+                    Ok(Self::map_to_event_response(_identifier.to_string(), event))
                 }
-                Ok(Self::map_to_event_response(_identifier, event))
-            }
+            })
         })
     }
 
@@ -279,7 +331,7 @@ impl Store {
     ) -> PagedResponse<EventResponse> {
         DATA.with(|data| {
             // Get all the events
-            let entries = Data::get_entries(data);
+            let entries = ENTRIES.with(|entries| Data::get_entries(entries));
 
             // Filter the events by group identifier
             let events: Vec<EventResponse> = entries
@@ -309,10 +361,10 @@ impl Store {
         // Initialize the vector that will contain the events count for each group
         let mut events_counts: Vec<(Principal, usize)> = vec![];
 
-        DATA.with(|data| {
+        ENTRIES.with(|entries| {
             // For each group, we count the number of events
             for group_identifier in group_identifiers {
-                let count = Data::get_entries(data)
+                let count = Data::get_entries(entries)
                     .into_iter()
                     .filter(|(_, _event)| &_event.group_identifier == &group_identifier)
                     .count();
@@ -334,7 +386,7 @@ impl Store {
         max_bytes_per_chunk: usize,
     ) -> (Vec<u8>, (usize, usize)) {
         // Get all the events
-        let events = DATA.with(|data| Data::get_entries(data));
+        let events = ENTRIES.with(|entries| Data::get_entries(entries));
         // Filter out deleted events and map the events to EventResponse
         let mapped_events: Vec<EventResponse> = events
             .iter()
@@ -380,9 +432,9 @@ impl Store {
     }
 
     // Method to map events to a default reponse that can be used on the frontend
-    fn map_to_event_response(identifier: Principal, event: Event) -> EventResponse {
+    fn map_to_event_response(identifier: String, event: Event) -> EventResponse {
         EventResponse {
-            identifier,
+            identifier: Principal::from_text(identifier).unwrap_or(Principal::anonymous()),
             name: event.name,
             description: event.description,
             date: event.date,
@@ -676,20 +728,22 @@ impl Store {
             return Err(false);
         };
 
-        DATA.with(|data| {
-            // Get the event
-            let existing = Data::get_entry(data, event_identifier);
-            match existing {
-                // Update the event
-                Ok((_, mut _event)) => {
-                    _event
-                        .attendee_count
-                        .insert(event_attendee_canister, attendee_count);
-                    let _ = Data::update_entry(data, event_identifier, _event);
-                    Ok(())
+        STABLE_DATA.with(|data| {
+            ENTRIES.with(|entries| {
+                // Get the event
+                let existing = Data::get_entry(data, entries, event_identifier);
+                match existing {
+                    // Update the event
+                    Ok((_, mut _event)) => {
+                        _event
+                            .attendee_count
+                            .insert(event_attendee_canister, attendee_count);
+                        let _ = Data::update_entry(data, entries, event_identifier, _event);
+                        Ok(())
+                    }
+                    Err(_) => Err(false),
                 }
-                Err(_) => Err(false),
-            }
+            })
         })
     }
 
@@ -775,6 +829,9 @@ impl Store {
     ) -> Result<Principal, ApiError> {
         let group_roles = get_group_roles(group_identifier).await;
         let member_roles = get_member_roles(member_identifier, group_identifier).await;
+        let name = STABLE_DATA
+            .with(|data| Data::get_name(data.borrow().get()))
+            .to_string();
 
         match member_roles {
             Ok((_principal, _roles)) => {
@@ -783,7 +840,7 @@ impl Store {
                         ApiErrorType::Unauthorized,
                         "PRINCIPAL_MISMATCH",
                         "Principal mismatch",
-                        DATA.with(|data| Data::get_name(data)).as_str(),
+                        name.as_str(),
                         "check_permission",
                         None,
                     ));
@@ -804,7 +861,7 @@ impl Store {
                                 ApiErrorType::Unauthorized,
                                 "NO_PERMISSION",
                                 "No permission",
-                                DATA.with(|data| Data::get_name(data)).as_str(),
+                                name.as_str(),
                                 "check_permission",
                                 None,
                             ));
@@ -816,7 +873,7 @@ impl Store {
                         ApiErrorType::Unauthorized,
                         "NO_PERMISSION",
                         err.as_str(),
-                        DATA.with(|data| Data::get_name(data)).as_str(),
+                        name.as_str(),
                         "check_permission",
                         None,
                     )),
@@ -826,7 +883,7 @@ impl Store {
                 ApiErrorType::Unauthorized,
                 "NO_PERMISSION",
                 err.as_str(),
-                DATA.with(|data| Data::get_name(data)).as_str(),
+                name.as_str(),
                 "check_permission",
                 None,
             )),

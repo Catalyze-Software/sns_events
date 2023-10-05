@@ -257,6 +257,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+    'migrate_to_stable' : IDL.Func([IDL.Text], [], []),
     'migration_add_events' : IDL.Func(
         [IDL.Vec(IDL.Tuple(IDL.Principal, Event))],
         [],
