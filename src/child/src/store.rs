@@ -239,7 +239,7 @@ impl Store {
             // If the event is found, we check if the event belongs to the group
             Ok((_identifier, event)) => {
                 if let Some(_group_identifier) = group_identifier {
-                    if &event.group_identifier != &_identifier {
+                    if &event.group_identifier != &_group_identifier {
                         return Err(api_error(
                             ApiErrorType::NotFound,
                             "EVENT_NOT_FOUND",
