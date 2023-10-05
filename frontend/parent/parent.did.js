@@ -146,6 +146,7 @@ export const idlFactory = ({ IDL }) => {
   const EventResponse = IDL.Record({
     'updated_on' : IDL.Nat64,
     'banner_image' : Asset,
+    'group_identifier' : IDL.Principal,
     'owner' : IDL.Principal,
     'metadata' : IDL.Opt(IDL.Text),
     'date' : DateRange,

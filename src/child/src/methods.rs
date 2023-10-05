@@ -48,7 +48,7 @@ async fn add_event(
 #[candid_method(query)]
 fn get_event(
     identifier: Principal,
-    group_identifier: Principal,
+    group_identifier: Option<Principal>,
 ) -> Result<EventResponse, ApiError> {
     Store::get_event(identifier, group_identifier)
 }
@@ -72,7 +72,7 @@ fn get_events(
     sort: EventSort,
     filter: Vec<EventFilter>,
     filter_type: FilterType,
-    group_identifier: Principal,
+    group_identifier: Option<Principal>,
 ) -> Result<PagedResponse<EventResponse>, ApiError> {
     Ok(Store::get_events(
         limit,
@@ -118,9 +118,10 @@ async fn edit_event(
     value: UpdateEvent,
     group_identifier: Principal,
     member_identifier: Principal,
+    event_attendee_canister: Principal,
 ) -> Result<EventResponse, ApiError> {
-    match Store::can_edit(caller(), group_identifier, member_identifier).await {
-        Ok(_caller) => Store::edit_event(identifier, value),
+    match Store::can_edit(caller(), identifier, group_identifier, member_identifier).await {
+        Ok(_caller) => Store::edit_event(identifier, value, event_attendee_canister).await,
         Err(err) => Err(err),
     }
 }
@@ -133,7 +134,7 @@ async fn delete_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    match Store::can_delete(caller(), group_identifier, member_identifier).await {
+    match Store::can_delete(caller(), identifier, group_identifier, member_identifier).await {
         Ok(_caller) => Store::delete_event(identifier, group_identifier),
         Err(err) => Err(err),
     }
@@ -148,7 +149,7 @@ async fn cancel_event(
     group_identifier: Principal,
     member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    match Store::can_edit(caller(), group_identifier, member_identifier).await {
+    match Store::can_edit(caller(), identifier, group_identifier, member_identifier).await {
         Ok(_caller) => Store::cancel_event(identifier, reason, group_identifier),
         Err(err) => Err(err),
     }

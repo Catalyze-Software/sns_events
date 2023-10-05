@@ -55,6 +55,7 @@ export type EventFilter = { 'Tag' : number } |
 export interface EventResponse {
   'updated_on' : bigint,
   'banner_image' : Asset,
+  'group_identifier' : Principal,
   'owner' : Principal,
   'metadata' : [] | [string],
   'date' : DateRange,

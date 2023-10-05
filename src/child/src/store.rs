@@ -48,7 +48,7 @@ impl Store {
             date: post_event.date,
             privacy: post_event.privacy,
             created_by: caller,
-            owner: caller,
+            owner: post_event.owner,
             website: post_event.website,
             location: post_event.location,
             image: post_event.image,
@@ -84,9 +84,9 @@ impl Store {
             // If the event is stored successfully, we add the owner as an attendee on the event_attendee canister (inter-canister call)
             Ok((_identifier, event)) => {
                 let add_attendee_result = Self::add_owner_as_attendee(
-                    &caller,
+                    &event.owner,
                     &_identifier,
-                    group_identifier,
+                    &group_identifier,
                     &event_attendee_canister,
                 )
                 .await;
@@ -111,12 +111,13 @@ impl Store {
     }
 
     // This method is used to edit an event
-    pub fn edit_event(
+    pub async fn edit_event(
         identifier: Principal,
         update_event: UpdateEvent,
+        event_attendee_canister: Principal,
     ) -> Result<EventResponse, ApiError> {
         // Get the event from the canister
-        DATA.with(|data| match Data::get_entry(data, identifier) {
+        let response = DATA.with(|data| match Data::get_entry(data, identifier) {
             // If the event is not found, we return an error
             Err(err) => Err(err),
             // If the event is found, we check if the caller is the owner of the event
@@ -129,18 +130,35 @@ impl Store {
                 _existing_event.location = update_event.location;
                 _existing_event.image = update_event.image;
                 _existing_event.banner_image = update_event.banner_image;
+                _existing_event.owner = update_event.owner;
+                _existing_event.metadata = update_event.metadata;
                 _existing_event.tags = update_event.tags;
                 _existing_event.updated_on = time();
 
                 // Update the event
                 match DATA.with(|data| Data::update_entry(data, _identifier, _existing_event)) {
                     Err(err) => Err(err),
-                    Ok((__identifier, event)) => {
-                        Ok(Self::map_to_event_response(__identifier, event))
-                    }
+                    Ok((__identifier, event)) => Ok((
+                        Ok(Self::map_to_event_response(__identifier, event.clone())),
+                        event.group_identifier.clone(),
+                    )),
                 }
             }
-        })
+        });
+
+        let _response = response.clone().unwrap();
+        let user_principal = &_response.0.unwrap().owner;
+        let group_identifier = &_response.1;
+
+        let _ = Self::add_owner_as_attendee(
+            &user_principal,
+            &identifier,
+            group_identifier,
+            &event_attendee_canister,
+        )
+        .await;
+
+        response.unwrap().0
     }
 
     // This method is used to delete an event
@@ -212,7 +230,7 @@ impl Store {
     // This method is used to get an event
     pub fn get_event(
         identifier: Principal,
-        group_identifier: Principal,
+        group_identifier: Option<Principal>,
     ) -> Result<EventResponse, ApiError> {
         // Get the event from the data store
         DATA.with(|data| match Data::get_entry(data, identifier) {
@@ -220,15 +238,18 @@ impl Store {
             Err(err) => Err(err),
             // If the event is found, we check if the event belongs to the group
             Ok((_identifier, event)) => {
-                if &event.group_identifier != &group_identifier {
-                    return Err(api_error(
-                        ApiErrorType::NotFound,
-                        "EVENT_NOT_FOUND",
-                        "No event found for this group",
-                        DATA.with(|data| Data::get_name(data)).as_str(),
-                        "get_event",
-                        None,
-                    ));
+                if let Some(_group_identifier) = group_identifier {
+                    if &event.group_identifier != &_group_identifier {
+                        return Err(api_error(
+                            ApiErrorType::NotFound,
+                            "EVENT_NOT_FOUND",
+                            "No event found for this group",
+                            DATA.with(|data| Data::get_name(data)).as_str(),
+                            "get_event",
+                            None,
+                        ));
+                    }
+                    return Ok(Self::map_to_event_response(_identifier, event));
                 }
                 Ok(Self::map_to_event_response(_identifier, event))
             }
@@ -241,7 +262,7 @@ impl Store {
         group_identifier: Principal,
     ) -> Result<(Principal, Privacy), ApiError> {
         // Get the event from the data store
-        match Self::get_event(identifier, group_identifier) {
+        match Self::get_event(identifier, Some(group_identifier)) {
             Err(err) => Err(err),
             Ok(_response) => Ok((_response.owner, _response.privacy)),
         }
@@ -254,7 +275,7 @@ impl Store {
         sort: EventSort,
         filters: Vec<EventFilter>,
         filter_type: FilterType,
-        group_identifier: Principal,
+        group_identifier: Option<Principal>,
     ) -> PagedResponse<EventResponse> {
         DATA.with(|data| {
             // Get all the events
@@ -263,7 +284,13 @@ impl Store {
             // Filter the events by group identifier
             let events: Vec<EventResponse> = entries
                 .into_iter()
-                .filter(|(_, _event)| &_event.group_identifier == &group_identifier)
+                .filter(|(_, _event)| !_event.is_deleted)
+                .filter(|(_, _event)| {
+                    if let Some(_group_identifier) = group_identifier {
+                        return &_event.group_identifier == &_group_identifier;
+                    }
+                    true
+                })
                 .map(|(id, event)| Self::map_to_event_response(id, event))
                 .collect();
 
@@ -378,6 +405,7 @@ impl Store {
             is_canceled: event.is_canceled,
             is_deleted: event.is_deleted,
             metadata: event.metadata,
+            group_identifier: event.group_identifier,
         }
     }
 
@@ -387,6 +415,12 @@ impl Store {
         filters: Vec<EventFilter>,
         filter_type: FilterType,
     ) -> Vec<EventResponse> {
+        if let FilterType::Or = filter_type {
+            if filters.len() == 0 {
+                return events;
+            }
+        }
+
         // filter out deleted events
         let mut filtered_events: Vec<EventResponse> = events
             .into_iter()
@@ -487,7 +521,7 @@ impl Store {
 
                 filtered_events
             }
-            // This filter type will return groups that match any of the filters
+            // This filter type will return events that match any of the filters
             Or => {
                 let mut hashmap_events: HashMap<Principal, EventResponse> = HashMap::new();
                 for filter in filters {
@@ -692,24 +726,37 @@ impl Store {
     // This method is used for role / permission based access control
     pub async fn can_edit(
         caller: Principal,
+        event_identifier: Principal,
         group_identifier: Principal,
         member_identifier: Principal,
     ) -> Result<Principal, ApiError> {
-        Self::check_permission(
+        if let Ok(event) = Self::get_event(event_identifier, Some(group_identifier)) {
+            if event.owner == caller {
+                return Ok(caller);
+            }
+        }
+
+        return Self::check_permission(
             caller,
             group_identifier,
             member_identifier,
             PermissionActionType::Edit,
         )
-        .await
+        .await;
     }
 
     // This method is used for role / permission based access control
     pub async fn can_delete(
         caller: Principal,
+        event_identifier: Principal,
         group_identifier: Principal,
         member_identifier: Principal,
     ) -> Result<Principal, ApiError> {
+        if let Ok(event) = Self::get_event(event_identifier, Some(group_identifier)) {
+            if event.owner == caller {
+                return Ok(caller);
+            }
+        }
         Self::check_permission(
             caller,
             group_identifier,
@@ -790,7 +837,7 @@ impl Store {
     async fn add_owner_as_attendee(
         user_principal: &Principal,
         event_identifier: &Principal,
-        group_identifier: Principal,
+        group_identifier: &Principal,
         event_attendee_canister: &Principal,
     ) -> Result<(), bool> {
         let add_owner_response: Result<(Result<(), bool>,), _> = call::call(

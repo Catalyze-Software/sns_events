@@ -54,6 +54,7 @@ type EventFilter = variant {
 type EventResponse = record {
   updated_on : nat64;
   banner_image : Asset;
+  group_identifier : principal;
   owner : principal;
   metadata : opt text;
   date : DateRange;
