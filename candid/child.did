@@ -194,7 +194,7 @@ service : (principal, text, nat64) -> {
     ) -> (Result_3) query;
   get_events_count : (vec principal) -> (vec record { principal; nat64 }) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
-  migrate_to_stable : (text) -> ();
+  migrate_to_stable : () -> ();
   migration_add_events : (vec record { principal; Event }) -> ();
   update_attendee_count_on_event : (principal, principal, nat64) -> (Result_4);
 }

@@ -329,31 +329,29 @@ impl Store {
         filter_type: FilterType,
         group_identifier: Option<Principal>,
     ) -> PagedResponse<EventResponse> {
-        DATA.with(|data| {
-            // Get all the events
-            let entries = ENTRIES.with(|entries| Data::get_entries(entries));
+        // Get all the events
+        let entries = ENTRIES.with(|entries| Data::get_entries(entries));
 
-            // Filter the events by group identifier
-            let events: Vec<EventResponse> = entries
-                .into_iter()
-                .filter(|(_, _event)| !_event.is_deleted)
-                .filter(|(_, _event)| {
-                    if let Some(_group_identifier) = group_identifier {
-                        return &_event.group_identifier == &_group_identifier;
-                    }
-                    true
-                })
-                .map(|(id, event)| Self::map_to_event_response(id, event))
-                .collect();
+        // Filter the events by group identifier
+        let events: Vec<EventResponse> = entries
+            .into_iter()
+            .filter(|(_, _event)| !_event.is_deleted)
+            .filter(|(_, _event)| {
+                if let Some(_group_identifier) = group_identifier {
+                    return &_event.group_identifier == &_group_identifier;
+                }
+                true
+            })
+            .map(|(id, event)| Self::map_to_event_response(id, event))
+            .collect();
 
-            // Filter the events by the filters
-            let filtered_events = Self::get_filtered_events(events, filters, filter_type);
+        // Filter the events by the filters
+        let filtered_events = Self::get_filtered_events(events, filters, filter_type);
 
-            // Sort the events
-            let ordered_events = Self::get_ordered_events(filtered_events, sort);
+        // Sort the events
+        let ordered_events = Self::get_ordered_events(filtered_events, sort);
 
-            get_paged_data(ordered_events, limit, page)
-        })
+        get_paged_data(ordered_events, limit, page)
     }
 
     // This method is used to get the events count for a set of groups

@@ -221,7 +221,7 @@ export interface _SERVICE {
     Array<[Principal, bigint]>
   >,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
-  'migrate_to_stable' : ActorMethod<[string], undefined>,
+  'migrate_to_stable' : ActorMethod<[], undefined>,
   'migration_add_events' : ActorMethod<[Array<[Principal, Event]>], undefined>,
   'update_attendee_count_on_event' : ActorMethod<
     [Principal, Principal, bigint],

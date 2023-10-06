@@ -16,11 +16,12 @@ use crate::{
 };
 
 #[update]
-pub fn migrate_to_stable(code: String) {
-    if code != "rem.codes" {
+pub fn migrate_to_stable() {
+    if caller().to_string()
+        != "ledm3-52ncq-rffuv-6ed44-hg5uo-iicyu-pwkzj-syfva-heo4k-p7itq-aqe".to_string()
+    {
         return;
     }
-
     let data = DATA.with(|d| d.borrow().clone());
     let _ = STABLE_DATA.with(|s| {
         s.borrow_mut().set(Data {
