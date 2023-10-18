@@ -41,14 +41,14 @@ thread_local! {
         // NEW STABLE
         pub static STABLE_DATA: RefCell<StableCell<Data, Memory>> = RefCell::new(
             StableCell::init(
-                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0))),
+                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))),
                 Data::default(),
             ).expect("failed")
         );
 
         pub static ENTRIES: RefCell<StableBTreeMap<String, Event, Memory>> = RefCell::new(
             StableBTreeMap::init(
-                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))),
+                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(2))),
             )
         );
 
