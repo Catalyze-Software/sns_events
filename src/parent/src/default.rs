@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use ic_cdk::{caller, init, post_upgrade, pre_upgrade, query, storage};
 use ic_cdk_timers::set_timer;
-use ic_scalable_misc::{
+use ic_scalable_canister::ic_scalable_misc::{
     helpers::logger_helper::add_log,
     models::logger_models::{LogType, PostLog},
 };
@@ -20,7 +20,7 @@ pub fn pre_upgrade() {
 #[post_upgrade]
 pub fn post_upgrade() {
     let (mut old_store,): (ScalableData,) = storage::stable_restore().unwrap();
-    use ic_scalable_misc::enums::wasm_version_type::WasmVersion::*;
+    use ic_scalable_canister::ic_scalable_misc::enums::wasm_version_type::WasmVersion::*;
     let version = match old_store.child_wasm_data.wasm_version {
         Version(_version) => _version + 1,
         _ => 0,
@@ -85,12 +85,12 @@ fn init() {
 pub fn __export_did_tmp_() -> String {
     use candid::{export_service, Principal};
     use ic_cdk::api::management_canister::http_request::HttpResponse;
-    use ic_scalable_misc::enums::api_error_type::ApiError;
-    use ic_scalable_misc::enums::filter_type::FilterType;
-    use ic_scalable_misc::enums::wasm_version_type::WasmVersion;
-    use ic_scalable_misc::models::canister_models::ScalableCanisterDetails;
-    use ic_scalable_misc::models::http_models::HttpRequest;
-    use ic_scalable_misc::models::paged_response_models::PagedResponse;
+    use ic_scalable_canister::ic_scalable_misc::enums::api_error_type::ApiError;
+    use ic_scalable_canister::ic_scalable_misc::enums::filter_type::FilterType;
+    use ic_scalable_canister::ic_scalable_misc::enums::wasm_version_type::WasmVersion;
+    use ic_scalable_canister::ic_scalable_misc::models::canister_models::ScalableCanisterDetails;
+    use ic_scalable_canister::ic_scalable_misc::models::http_models::HttpRequest;
+    use ic_scalable_canister::ic_scalable_misc::models::paged_response_models::PagedResponse;
     use shared::event_models::*;
     export_service!();
     __export_service()
@@ -99,6 +99,6 @@ pub fn __export_did_tmp_() -> String {
 // Method used to save the candid interface to a file
 #[test]
 pub fn candid() {
-    use ic_scalable_misc::helpers::candid_helper::save_candid;
+    use ic_scalable_canister::ic_scalable_misc::helpers::candid_helper::save_candid;
     save_candid(__export_did_tmp_(), String::from("parent"));
 }

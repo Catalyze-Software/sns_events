@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use candid::{CandidType, Decode, Deserialize, Encode, Principal};
-use ic_scalable_misc::{
+use ic_scalable_canister::ic_scalable_misc::{
     enums::{
         asset_type::Asset, location_type::Location, privacy_type::Privacy, sort_type::SortDirection,
     },

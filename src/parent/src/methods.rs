@@ -1,5 +1,5 @@
 use ic_cdk::query;
-use ic_scalable_misc::{
+use ic_scalable_canister::ic_scalable_misc::{
     enums::filter_type::FilterType, models::paged_response_models::PagedResponse,
 };
 

@@ -1,13 +1,14 @@
 use candid::Principal;
+
 use ic_cdk::{caller, init, post_upgrade, pre_upgrade, query, update};
 
+use ic_scalable_canister::ic_scalable_misc::{
+    enums::api_error_type::ApiError,
+    models::http_models::{HttpRequest, HttpResponse},
+};
 use ic_scalable_canister::{
     ic_methods::{self},
     store::Data,
-};
-use ic_scalable_misc::{
-    enums::api_error_type::ApiError,
-    models::http_models::{HttpRequest, HttpResponse},
 };
 use ic_stable_structures::memory_manager::MemoryId;
 
@@ -95,11 +96,11 @@ pub fn __export_did_tmp_() -> String {
     use candid::export_service;
     use candid::Principal;
     use ic_cdk::api::management_canister::http_request::HttpResponse;
-    use ic_scalable_misc::enums::api_error_type::ApiError;
-    use ic_scalable_misc::enums::filter_type::FilterType;
-    use ic_scalable_misc::enums::privacy_type::Privacy;
-    use ic_scalable_misc::models::http_models::HttpRequest;
-    use ic_scalable_misc::models::paged_response_models::PagedResponse;
+    use ic_scalable_canister::ic_scalable_misc::enums::api_error_type::ApiError;
+    use ic_scalable_canister::ic_scalable_misc::enums::filter_type::FilterType;
+    use ic_scalable_canister::ic_scalable_misc::enums::privacy_type::Privacy;
+    use ic_scalable_canister::ic_scalable_misc::models::http_models::HttpRequest;
+    use ic_scalable_canister::ic_scalable_misc::models::paged_response_models::PagedResponse;
     use shared::event_models::*;
     export_service!();
     __export_service()
@@ -108,7 +109,7 @@ pub fn __export_did_tmp_() -> String {
 // Method used to save the candid interface to a file
 #[test]
 pub fn candid() {
-    use ic_scalable_misc::helpers::candid_helper::save_candid;
+    use ic_scalable_canister::ic_scalable_misc::helpers::candid_helper::save_candid;
     save_candid(__export_did_tmp_(), String::from("child"));
 }
 

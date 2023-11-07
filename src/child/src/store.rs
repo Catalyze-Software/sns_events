@@ -1,7 +1,6 @@
 use candid::Principal;
 use ic_cdk::api::{call, time};
-use ic_scalable_canister::store::Data;
-use ic_scalable_misc::{
+use ic_scalable_canister::ic_scalable_misc::{
     enums::{
         api_error_type::{ApiError, ApiErrorType},
         filter_type::FilterType,
@@ -20,6 +19,7 @@ use ic_scalable_misc::{
         permissions_models::{PermissionActionType, PermissionType},
     },
 };
+use ic_scalable_canister::store::Data;
 
 use shared::event_models::{Event, EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent};
 
@@ -46,13 +46,15 @@ thread_local! {
             ).expect("failed")
         );
 
+        // NEW STABLE
         pub static ENTRIES: RefCell<StableBTreeMap<String, Event, Memory>> = RefCell::new(
             StableBTreeMap::init(
                 MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(2))),
             )
         );
 
-    pub static DATA: RefCell<ic_scalable_misc::models::original_data::Data<Event>> = RefCell::new(ic_scalable_misc::models::original_data::Data::default());
+        // OLD NON-STABLE
+        pub static DATA: RefCell<ic_scalable_canister::ic_scalable_misc::models::original_data::Data<Event>> = RefCell::new(ic_scalable_canister::ic_scalable_misc::models::original_data::Data::default());
 }
 
 pub struct Store;

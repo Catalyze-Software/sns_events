@@ -220,6 +220,7 @@ export interface _SERVICE {
     [Array<Principal>],
     Array<[Principal, bigint]>
   >,
+  'get_old_event_count' : ActorMethod<[], bigint>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'migrate_to_stable' : ActorMethod<[], undefined>,
   'migration_add_events' : ActorMethod<[Array<[Principal, Event]>], undefined>,

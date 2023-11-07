@@ -1,6 +1,6 @@
 use candid::Principal;
 use ic_cdk::{caller, query, update};
-use ic_scalable_misc::{
+use ic_scalable_canister::ic_scalable_misc::{
     enums::{api_error_type::ApiError, wasm_version_type::WasmVersion},
     helpers::{
         canister_helper::Canister,

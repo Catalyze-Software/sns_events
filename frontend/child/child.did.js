@@ -256,6 +256,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Nat64))],
         ['query'],
       ),
+    'get_old_event_count' : IDL.Func([], [IDL.Nat64], ['query']),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'migrate_to_stable' : IDL.Func([], [], []),
     'migration_add_events' : IDL.Func(

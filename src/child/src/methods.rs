@@ -2,7 +2,7 @@ use std::{collections::HashMap, iter::FromIterator};
 
 use candid::Principal;
 use ic_cdk::{caller, query, update};
-use ic_scalable_misc::{
+use ic_scalable_canister::ic_scalable_misc::{
     enums::{api_error_type::ApiError, filter_type::FilterType, privacy_type::Privacy},
     models::paged_response_models::PagedResponse,
 };
@@ -49,6 +49,11 @@ fn get_event(
     group_identifier: Option<Principal>,
 ) -> Result<EventResponse, ApiError> {
     Store::get_event(identifier, group_identifier)
+}
+
+#[query]
+fn get_old_event_count() -> usize {
+    DATA.with(|data| data.borrow().entries.len())
 }
 
 // This method is used to get the privacy and owner of an event
