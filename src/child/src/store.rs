@@ -25,7 +25,7 @@ use shared::event_models::{Event, EventFilter, EventResponse, EventSort, PostEve
 
 use std::{cell::RefCell, collections::HashMap, iter::FromIterator};
 
-use crate::IDENTIFIER_KIND;
+use crate::{validate::validate_post_event, validate::validate_update_event, IDENTIFIER_KIND};
 
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager, VirtualMemory},
@@ -67,78 +67,83 @@ impl Store {
         group_identifier: Principal,
         event_attendee_canister: Principal,
     ) -> Result<EventResponse, ApiError> {
-        // Create a new event with the post_event data
-        let new_event = Event {
-            name: post_event.name,
-            description: post_event.description,
-            date: post_event.date,
-            privacy: post_event.privacy,
-            created_by: caller,
-            owner: post_event.owner,
-            website: post_event.website,
-            location: post_event.location,
-            image: post_event.image,
-            banner_image: post_event.banner_image,
-            tags: post_event.tags,
-            // The attendee count is a hashmap with the canister id as key and the count as value
-            attendee_count: HashMap::from_iter(vec![(event_attendee_canister, 1)]),
-            is_canceled: (false, "".to_string()),
-            is_deleted: false,
-            updated_on: time(),
-            created_on: time(),
-            group_identifier,
-            metadata: post_event.metadata,
-        };
+        match validate_post_event(post_event.clone()) {
+            Err(err) => Err(err),
+            Ok(_) => {
+                // Create a new event with the post_event data
+                let new_event = Event {
+                    name: post_event.name,
+                    description: post_event.description,
+                    date: post_event.date,
+                    privacy: post_event.privacy,
+                    created_by: caller,
+                    owner: post_event.owner,
+                    website: post_event.website,
+                    location: post_event.location,
+                    image: post_event.image,
+                    banner_image: post_event.banner_image,
+                    tags: post_event.tags,
+                    // The attendee count is a hashmap with the canister id as key and the count as value
+                    attendee_count: HashMap::from_iter(vec![(event_attendee_canister, 1)]),
+                    is_canceled: (false, "".to_string()),
+                    is_deleted: false,
+                    updated_on: time(),
+                    created_on: time(),
+                    group_identifier,
+                    metadata: post_event.metadata,
+                };
 
-        // TODO: Validate the event data
+                // TODO: Validate the event data
 
-        match STABLE_DATA.with(|data| {
-            ENTRIES.with(|entries| {
-                Data::add_entry(
-                    data,
-                    entries,
-                    new_event.clone(),
-                    Some(IDENTIFIER_KIND.to_string()),
-                )
-            })
-        }) {
-            // If the canister is at capacity, we spawn a new canister
-            Err(err) => match err {
-                ApiError::CanisterAtCapacity(message) => {
-                    let _data = STABLE_DATA.with(|d| d.borrow().get().clone());
-                    // Spawn a sibling canister and pass the event data to it
-                    match Data::spawn_sibling(&_data, new_event).await {
-                        Ok(_) => Err(ApiError::CanisterAtCapacity(message)),
-                        Err(err) => Err(err),
-                    }
-                }
-                _ => Err(err),
-            },
-            // If the event is stored successfully, we add the owner as an attendee on the event_attendee canister (inter-canister call)
-            Ok((_identifier, event)) => {
-                let add_attendee_result = Self::add_owner_as_attendee(
-                    &event.owner,
-                    &_identifier,
-                    &group_identifier,
-                    &event_attendee_canister,
-                )
-                .await;
+                match STABLE_DATA.with(|data| {
+                    ENTRIES.with(|entries| {
+                        Data::add_entry(
+                            data,
+                            entries,
+                            new_event.clone(),
+                            Some(IDENTIFIER_KIND.to_string()),
+                        )
+                    })
+                }) {
+                    // If the canister is at capacity, we spawn a new canister
+                    Err(err) => match err {
+                        ApiError::CanisterAtCapacity(message) => {
+                            let _data = STABLE_DATA.with(|d| d.borrow().get().clone());
+                            // Spawn a sibling canister and pass the event data to it
+                            match Data::spawn_sibling(&_data, new_event).await {
+                                Ok(_) => Err(ApiError::CanisterAtCapacity(message)),
+                                Err(err) => Err(err),
+                            }
+                        }
+                        _ => Err(err),
+                    },
+                    // If the event is stored successfully, we add the owner as an attendee on the event_attendee canister (inter-canister call)
+                    Ok((_identifier, event)) => {
+                        let add_attendee_result = Self::add_owner_as_attendee(
+                            &event.owner,
+                            &_identifier,
+                            &group_identifier,
+                            &event_attendee_canister,
+                        )
+                        .await;
 
-                // If the attendee is added successfully, we return the event response
-                match add_attendee_result {
-                    Ok(_) => Ok(Self::map_to_event_response(_identifier.to_string(), event)),
-                    Err(_) => {
-                        ENTRIES.with(|entries| Data::remove_entry(entries, &_identifier));
-                        return Err(api_error(
-                            ApiErrorType::Unauthorized,
-                            "ATTENDEE_ADD_FAILED",
-                            "Storing the attendee failed",
-                            STABLE_DATA
-                                .with(|data| Data::get_name(data.borrow().get()))
-                                .as_str(),
-                            "add_event",
-                            None,
-                        ));
+                        // If the attendee is added successfully, we return the event response
+                        match add_attendee_result {
+                            Ok(_) => Ok(Self::map_to_event_response(_identifier.to_string(), event)),
+                            Err(_) => {
+                                ENTRIES.with(|entries| Data::remove_entry(entries, &_identifier));
+                                return Err(api_error(
+                                    ApiErrorType::Unauthorized,
+                                    "ATTENDEE_ADD_FAILED",
+                                    "Storing the attendee failed",
+                                    STABLE_DATA
+                                        .with(|data| Data::get_name(data.borrow().get()))
+                                        .as_str(),
+                                    "add_event",
+                                    None,
+                                ));
+                            }
+                        }
                     }
                 }
             }
@@ -152,53 +157,58 @@ impl Store {
         event_attendee_canister: Principal,
     ) -> Result<EventResponse, ApiError> {
         // Get the event from the canister
-        let response = STABLE_DATA.with(|data| {
-            ENTRIES.with(|entries| match Data::get_entry(data, entries, identifier) {
-                // If the event is not found, we return an error
-                Err(err) => Err(err),
-                // If the event is found, we check if the caller is the owner of the event
-                Ok((_identifier, mut _existing_event)) => {
-                    _existing_event.name = update_event.name;
-                    _existing_event.description = update_event.description;
-                    _existing_event.date = update_event.date;
-                    _existing_event.privacy = update_event.privacy;
-                    _existing_event.website = update_event.website;
-                    _existing_event.location = update_event.location;
-                    _existing_event.image = update_event.image;
-                    _existing_event.banner_image = update_event.banner_image;
-                    _existing_event.owner = update_event.owner;
-                    _existing_event.metadata = update_event.metadata;
-                    _existing_event.tags = update_event.tags;
-                    _existing_event.updated_on = time();
-
-                    // Update the event
-                    match Data::update_entry(data, entries, _identifier, _existing_event) {
+        match validate_update_event(update_event.clone()) {
+            Err(err) => Err(err),
+            Ok(_) => {
+                let response = STABLE_DATA.with(|data| {
+                    ENTRIES.with(|entries| match Data::get_entry(data, entries, identifier) {
+                        // If the event is not found, we return an error
                         Err(err) => Err(err),
-                        Ok((__identifier, event)) => Ok((
-                            Ok(Self::map_to_event_response(
-                                __identifier.to_string(),
-                                event.clone(),
-                            )),
-                            event.group_identifier.clone(),
-                        )),
-                    }
-                }
-            })
-        });
+                        // If the event is found, we check if the caller is the owner of the event
+                        Ok((_identifier, mut _existing_event)) => {
+                            _existing_event.name = update_event.name;
+                            _existing_event.description = update_event.description;
+                            _existing_event.date = update_event.date;
+                            _existing_event.privacy = update_event.privacy;
+                            _existing_event.website = update_event.website;
+                            _existing_event.location = update_event.location;
+                            _existing_event.image = update_event.image;
+                            _existing_event.banner_image = update_event.banner_image;
+                            _existing_event.owner = update_event.owner;
+                            _existing_event.metadata = update_event.metadata;
+                            _existing_event.tags = update_event.tags;
+                            _existing_event.updated_on = time();
 
-        let _response = response.clone().unwrap();
-        let user_principal = &_response.0.unwrap().owner;
-        let group_identifier = &_response.1;
+                            // Update the event
+                            match Data::update_entry(data, entries, _identifier, _existing_event) {
+                                Err(err) => Err(err),
+                                Ok((__identifier, event)) => Ok((
+                                    Ok(Self::map_to_event_response(
+                                        __identifier.to_string(),
+                                        event.clone(),
+                                    )),
+                                    event.group_identifier.clone(),
+                                )),
+                            }
+                        }
+                    })
+                });
 
-        let _ = Self::add_owner_as_attendee(
-            &user_principal,
-            &identifier,
-            group_identifier,
-            &event_attendee_canister,
-        )
-        .await;
+                let _response = response.clone().unwrap();
+                let user_principal = &_response.0.unwrap().owner;
+                let group_identifier = &_response.1;
 
-        response.unwrap().0
+                let _ = Self::add_owner_as_attendee(
+                    &user_principal,
+                    &identifier,
+                    group_identifier,
+                    &event_attendee_canister,
+                )
+                .await;
+
+                response.unwrap().0
+            }
+        }
     }
 
     // This method is used to delete an event
