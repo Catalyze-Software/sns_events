@@ -190,15 +190,19 @@ export interface _SERVICE {
     [PostEvent, Principal, Principal, Principal],
     Result_1
   >,
+  'backup_data' : ActorMethod<[], string>,
   'cancel_event' : ActorMethod<
     [Principal, string, Principal, Principal],
     Result
   >,
+  'clear_backup' : ActorMethod<[], undefined>,
   'delete_event' : ActorMethod<[Principal, Principal, Principal], Result>,
+  'download_chunk' : ActorMethod<[bigint], [bigint, Uint8Array | number[]]>,
   'edit_event' : ActorMethod<
     [Principal, PostEvent, Principal, Principal, Principal],
     Result_1
   >,
+  'finalize_upload' : ActorMethod<[], string>,
   'get_chunked_data' : ActorMethod<
     [Array<EventFilter>, FilterType, bigint, bigint],
     [Uint8Array | number[], [bigint, bigint]]
@@ -222,8 +226,11 @@ export interface _SERVICE {
   >,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'migration_add_events' : ActorMethod<[Array<[Principal, Event]>], undefined>,
+  'restore_data' : ActorMethod<[], undefined>,
+  'total_chunks' : ActorMethod<[], bigint>,
   'update_attendee_count_on_event' : ActorMethod<
     [Principal, Principal, bigint],
     Result_4
   >,
+  'upload_chunk' : ActorMethod<[[bigint, Uint8Array | number[]]], undefined>,
 }

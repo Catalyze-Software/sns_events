@@ -209,21 +209,29 @@ export const idlFactory = ({ IDL }) => {
         [Result_1],
         [],
       ),
+    'backup_data' : IDL.Func([], [IDL.Text], []),
     'cancel_event' : IDL.Func(
         [IDL.Principal, IDL.Text, IDL.Principal, IDL.Principal],
         [Result],
         [],
       ),
+    'clear_backup' : IDL.Func([], [], []),
     'delete_event' : IDL.Func(
         [IDL.Principal, IDL.Principal, IDL.Principal],
         [Result],
         [],
+      ),
+    'download_chunk' : IDL.Func(
+        [IDL.Nat64],
+        [IDL.Tuple(IDL.Nat64, IDL.Vec(IDL.Nat8))],
+        ['query'],
       ),
     'edit_event' : IDL.Func(
         [IDL.Principal, PostEvent, IDL.Principal, IDL.Principal, IDL.Principal],
         [Result_1],
         [],
       ),
+    'finalize_upload' : IDL.Func([], [IDL.Text], []),
     'get_chunked_data' : IDL.Func(
         [IDL.Vec(EventFilter), FilterType, IDL.Nat64, IDL.Nat64],
         [IDL.Vec(IDL.Nat8), IDL.Tuple(IDL.Nat64, IDL.Nat64)],
@@ -262,9 +270,16 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'restore_data' : IDL.Func([], [], []),
+    'total_chunks' : IDL.Func([], [IDL.Nat64], ['query']),
     'update_attendee_count_on_event' : IDL.Func(
         [IDL.Principal, IDL.Principal, IDL.Nat64],
         [Result_4],
+        [],
+      ),
+    'upload_chunk' : IDL.Func(
+        [IDL.Tuple(IDL.Nat64, IDL.Vec(IDL.Nat8))],
+        [],
         [],
       ),
   });
