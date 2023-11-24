@@ -67,6 +67,7 @@ pub struct PostEvent {
     pub website: String,
     pub location: Location,
     pub image: Asset,
+    pub owner: Principal,
     pub banner_image: Asset,
     pub metadata: Option<String>,
     pub tags: Vec<u32>,
@@ -81,6 +82,7 @@ pub struct UpdateEvent {
     pub website: String,
     pub location: Location,
     pub image: Asset,
+    pub owner: Principal,
     pub banner_image: Asset,
     pub metadata: Option<String>,
     pub tags: Vec<u32>,
@@ -128,4 +130,5 @@ pub struct EventResponse {
     pub metadata: Option<String>,
     pub updated_on: u64,
     pub created_on: u64,
+    pub group_identifier: Principal,
 }

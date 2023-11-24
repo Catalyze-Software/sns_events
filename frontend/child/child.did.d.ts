@@ -70,6 +70,7 @@ export type EventFilter = { 'Tag' : number } |
 export interface EventResponse {
   'updated_on' : bigint,
   'banner_image' : Asset,
+  'group_identifier' : Principal,
   'owner' : Principal,
   'metadata' : [] | [string],
   'date' : DateRange,
@@ -142,6 +143,7 @@ export interface PhysicalLocation {
 }
 export interface PostEvent {
   'banner_image' : Asset,
+  'owner' : Principal,
   'metadata' : [] | [string],
   'date' : DateRange,
   'name' : string,
@@ -188,23 +190,34 @@ export interface _SERVICE {
     [PostEvent, Principal, Principal, Principal],
     Result_1
   >,
+  'backup_data' : ActorMethod<[], string>,
   'cancel_event' : ActorMethod<
     [Principal, string, Principal, Principal],
     Result
   >,
+  'clear_backup' : ActorMethod<[], undefined>,
   'delete_event' : ActorMethod<[Principal, Principal, Principal], Result>,
+  'download_chunk' : ActorMethod<[bigint], [bigint, Uint8Array | number[]]>,
   'edit_event' : ActorMethod<
-    [Principal, PostEvent, Principal, Principal],
+    [Principal, PostEvent, Principal, Principal, Principal],
     Result_1
   >,
+  'finalize_upload' : ActorMethod<[], string>,
   'get_chunked_data' : ActorMethod<
     [Array<EventFilter>, FilterType, bigint, bigint],
     [Uint8Array | number[], [bigint, bigint]]
   >,
-  'get_event' : ActorMethod<[Principal, Principal], Result_1>,
+  'get_event' : ActorMethod<[Principal, [] | [Principal]], Result_1>,
   'get_event_privacy_and_owner' : ActorMethod<[Principal, Principal], Result_2>,
   'get_events' : ActorMethod<
-    [bigint, bigint, EventSort, Array<EventFilter>, FilterType, Principal],
+    [
+      bigint,
+      bigint,
+      EventSort,
+      Array<EventFilter>,
+      FilterType,
+      [] | [Principal],
+    ],
     Result_3
   >,
   'get_events_count' : ActorMethod<
@@ -213,8 +226,11 @@ export interface _SERVICE {
   >,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'migration_add_events' : ActorMethod<[Array<[Principal, Event]>], undefined>,
+  'restore_data' : ActorMethod<[], undefined>,
+  'total_chunks' : ActorMethod<[], bigint>,
   'update_attendee_count_on_event' : ActorMethod<
     [Principal, Principal, bigint],
     Result_4
   >,
+  'upload_chunk' : ActorMethod<[[bigint, Uint8Array | number[]]], undefined>,
 }

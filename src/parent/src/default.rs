@@ -70,7 +70,7 @@ pub fn post_upgrade() {
 fn init() {
     DATA.with(|v| {
         let mut data = v.borrow_mut();
-        data.name = "event_parent".to_string();
+        data.name = "event_child".to_string();
         data.parent = caller();
         // Set the child WASM data on first deploy from the file system
         data.child_wasm_data = ScalableData::get_child_wasm_data(&data, 0_0_1).unwrap();
