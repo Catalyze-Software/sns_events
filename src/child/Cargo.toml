@@ -19,6 +19,7 @@ serde = "1.0"
 byteorder = "1.4.3"
 
 # These dependencies are required
+ic_canister_backup = "0.0.4"
 ic_scalable_canister = "0.2.73"
 ic_scalable_misc = "0.2.48"
 shared = { path = "../shared" }
