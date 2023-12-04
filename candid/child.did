@@ -174,10 +174,13 @@ service : (principal, text, nat64) -> {
   add_entry_by_parent : (vec nat8) -> (Result);
   add_event : (PostEvent, principal, principal, principal) -> (Result_1);
   cancel_event : (principal, text, principal, principal) -> (Result);
+  clear_backup : () -> ();
   delete_event : (principal, principal, principal) -> (Result);
+  download_chunk : (nat64) -> (record { nat64; vec nat8 }) query;
   edit_event : (principal, PostEvent, principal, principal, principal) -> (
       Result_1,
     );
+  finalize_upload : () -> (text);
   get_chunked_data : (vec EventFilter, FilterType, nat64, nat64) -> (
       vec nat8,
       record { nat64; nat64 },
@@ -197,5 +200,8 @@ service : (principal, text, nat64) -> {
   http_request : (HttpRequest) -> (HttpResponse) query;
   migrate_to_stable : () -> ();
   migration_add_events : (vec record { principal; Event }) -> ();
+  restore_data : () -> ();
+  total_chunks : () -> (nat64) query;
   update_attendee_count_on_event : (principal, principal, nat64) -> (Result_4);
+  upload_chunk : (record { nat64; vec nat8 }) -> ();
 }

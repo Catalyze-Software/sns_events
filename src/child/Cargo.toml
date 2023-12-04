@@ -22,5 +22,6 @@ ciborium = "0.2.1"
 # These dependencies are required
 ic_scalable_canister = "0.3.0-beta.11"
 ic-stable-structures = "0.6.0"
+ic_canister_backup = "0.0.4"
 shared = { path = "../shared" }
 

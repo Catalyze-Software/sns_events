@@ -1,8 +1,12 @@
 {
-  "parent": {
-    "ic": "762ky-byaaa-aaaap-abgfa-cai"
-  },
   "child": {
-    "ic": "aaaaa-aa"
+    "ic": "aaaaa-aa",
+    "staging": "aaaaa-aa",
+    "development": "aaaaa-aa"
+  },
+  "parent": {
+    "ic": "762ky-byaaa-aaaap-abgfa-cai",
+    "staging": "762ky-byaaa-aaaap-abgfa-cai",
+    "development": "cklnk-oyaaa-aaaap-abqua-cai"
   }
 }
