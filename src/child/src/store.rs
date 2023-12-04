@@ -41,7 +41,7 @@ thread_local! {
         // NEW STABLE
         pub static STABLE_DATA: RefCell<StableCell<Data, Memory>> = RefCell::new(
             StableCell::init(
-                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))),
+                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0))),
                 Data::default(),
             ).expect("failed")
         );
@@ -49,12 +49,9 @@ thread_local! {
         // NEW STABLE
         pub static ENTRIES: RefCell<StableBTreeMap<String, Event, Memory>> = RefCell::new(
             StableBTreeMap::init(
-                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(2))),
+                MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))),
             )
         );
-
-        // OLD NON-STABLE
-        pub static DATA: RefCell<ic_scalable_canister::ic_scalable_misc::models::original_data::Data<Event>> = RefCell::new(ic_scalable_canister::ic_scalable_misc::models::original_data::Data::default());
 }
 
 pub struct Store;
@@ -129,7 +126,9 @@ impl Store {
 
                         // If the attendee is added successfully, we return the event response
                         match add_attendee_result {
-                            Ok(_) => Ok(Self::map_to_event_response(_identifier.to_string(), event)),
+                            Ok(_) => {
+                                Ok(Self::map_to_event_response(_identifier.to_string(), event))
+                            }
                             Err(_) => {
                                 ENTRIES.with(|entries| Data::remove_entry(entries, &_identifier));
                                 return Err(api_error(

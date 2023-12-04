@@ -33,26 +33,6 @@ type ErrorMessage = record {
   inputs : opt vec text;
   location : text;
 };
-type Event = record {
-  updated_on : nat64;
-  banner_image : Asset;
-  group_identifier : principal;
-  owner : principal;
-  metadata : opt text;
-  date : DateRange;
-  attendee_count : vec record { principal; nat64 };
-  name : text;
-  tags : vec nat32;
-  description : text;
-  created_by : principal;
-  created_on : nat64;
-  website : text;
-  privacy : Privacy;
-  is_canceled : record { bool; text };
-  image : Asset;
-  location : Location;
-  is_deleted : bool;
-};
 type EventFilter = variant {
   Tag : nat32;
   UpdatedOn : DateRange;
@@ -196,9 +176,7 @@ service : (principal, text, nat64) -> {
       opt principal,
     ) -> (Result_3) query;
   get_events_count : (vec principal) -> (vec record { principal; nat64 }) query;
-  get_old_event_count : () -> (nat64) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
-  migration_add_events : (vec record { principal; Event }) -> ();
   restore_data : () -> ();
   total_chunks : () -> (nat64) query;
   update_attendee_count_on_event : (principal, principal, nat64) -> (Result_4);

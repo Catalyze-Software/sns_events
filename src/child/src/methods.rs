@@ -1,5 +1,3 @@
-use std::{collections::HashMap, iter::FromIterator};
-
 use candid::Principal;
 use ic_cdk::{caller, query, update};
 use ic_scalable_canister::ic_scalable_misc::{
@@ -9,21 +7,8 @@ use ic_scalable_canister::ic_scalable_misc::{
 
 use crate::store::STABLE_DATA;
 
-use super::store::{Store, DATA};
-use shared::event_models::{Event, EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent};
-
-#[update]
-pub fn migration_add_events(events: Vec<(Principal, Event)>) -> () {
-    if caller()
-        == Principal::from_text("ledm3-52ncq-rffuv-6ed44-hg5uo-iicyu-pwkzj-syfva-heo4k-p7itq-aqe")
-            .unwrap()
-    {
-        DATA.with(|data| {
-            data.borrow_mut().current_entry_id = events.clone().len() as u64;
-            data.borrow_mut().entries = HashMap::from_iter(events);
-        })
-    }
-}
+use super::store::Store;
+use shared::event_models::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent};
 
 // This method is used to add a event to the canister,
 // The method is async because it optionally creates a new canister
@@ -49,11 +34,6 @@ fn get_event(
     group_identifier: Option<Principal>,
 ) -> Result<EventResponse, ApiError> {
     Store::get_event(identifier, group_identifier)
-}
-
-#[query]
-fn get_old_event_count() -> usize {
-    DATA.with(|data| data.borrow().entries.len())
 }
 
 // This method is used to get the privacy and owner of an event

@@ -38,26 +38,6 @@ export interface ErrorMessage {
   'inputs' : [] | [Array<string>],
   'location' : string,
 }
-export interface Event {
-  'updated_on' : bigint,
-  'banner_image' : Asset,
-  'group_identifier' : Principal,
-  'owner' : Principal,
-  'metadata' : [] | [string],
-  'date' : DateRange,
-  'attendee_count' : Array<[Principal, bigint]>,
-  'name' : string,
-  'tags' : Uint32Array | number[],
-  'description' : string,
-  'created_by' : Principal,
-  'created_on' : bigint,
-  'website' : string,
-  'privacy' : Privacy,
-  'is_canceled' : [boolean, string],
-  'image' : Asset,
-  'location' : Location,
-  'is_deleted' : boolean,
-}
 export type EventFilter = { 'Tag' : number } |
   { 'UpdatedOn' : DateRange } |
   { 'Name' : string } |
@@ -223,9 +203,7 @@ export interface _SERVICE {
     [Array<Principal>],
     Array<[Principal, bigint]>
   >,
-  'get_old_event_count' : ActorMethod<[], bigint>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
-  'migration_add_events' : ActorMethod<[Array<[Principal, Event]>], undefined>,
   'restore_data' : ActorMethod<[], undefined>,
   'total_chunks' : ActorMethod<[], bigint>,
   'update_attendee_count_on_event' : ActorMethod<
