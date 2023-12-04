@@ -198,7 +198,6 @@ service : (principal, text, nat64) -> {
   get_events_count : (vec principal) -> (vec record { principal; nat64 }) query;
   get_old_event_count : () -> (nat64) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
-  migrate_to_stable : () -> ();
   migration_add_events : (vec record { principal; Event }) -> ();
   restore_data : () -> ();
   total_chunks : () -> (nat64) query;

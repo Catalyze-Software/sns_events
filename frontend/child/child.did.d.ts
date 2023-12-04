@@ -225,7 +225,6 @@ export interface _SERVICE {
   >,
   'get_old_event_count' : ActorMethod<[], bigint>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
-  'migrate_to_stable' : ActorMethod<[], undefined>,
   'migration_add_events' : ActorMethod<[Array<[Principal, Event]>], undefined>,
   'restore_data' : ActorMethod<[], undefined>,
   'total_chunks' : ActorMethod<[], bigint>,

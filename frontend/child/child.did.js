@@ -265,7 +265,6 @@ export const idlFactory = ({ IDL }) => {
       ),
     'get_old_event_count' : IDL.Func([], [IDL.Nat64], ['query']),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
-    'migrate_to_stable' : IDL.Func([], [], []),
     'migration_add_events' : IDL.Func(
         [IDL.Vec(IDL.Tuple(IDL.Principal, Event))],
         [],
