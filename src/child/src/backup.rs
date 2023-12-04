@@ -7,7 +7,6 @@ use shared::event_models::Event;
 
 use crate::store::{ENTRIES, MEMORY_MANAGER, STABLE_DATA};
 
-//
 #[update(guard = "is_owner")]
 pub fn restore_data() {
     ENTRIES.with(|n| {
