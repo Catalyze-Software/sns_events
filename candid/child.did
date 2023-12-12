@@ -20,6 +20,15 @@ type ApiError = variant {
   BadRequest : ErrorMessage;
 };
 type Asset = variant { Url : text; None; CanisterStorage : CanisterStorage };
+type CanisterStatusResponse = record {
+  status : CanisterStatusType;
+  memory_size : nat;
+  cycles : nat;
+  settings : DefiniteCanisterSettings;
+  idle_cycles_burned_per_day : nat;
+  module_hash : opt vec nat8;
+};
+type CanisterStatusType = variant { stopped; stopping; running };
 type CanisterStorage = variant { None; Manifest : Manifest; Chunk : ChunkData };
 type ChunkData = record {
   chunk_id : nat64;
@@ -27,6 +36,12 @@ type ChunkData = record {
   index : nat64;
 };
 type DateRange = record { end_date : nat64; start_date : nat64 };
+type DefiniteCanisterSettings = record {
+  freezing_threshold : nat;
+  controllers : vec principal;
+  memory_allocation : nat;
+  compute_allocation : nat;
+};
 type ErrorMessage = record {
   tag : text;
   message : text;
@@ -133,11 +148,24 @@ type PostEvent = record {
   location : Location;
 };
 type Privacy = variant { Gated : GatedType; Private; Public; InviteOnly };
+type RejectionCode = variant {
+  NoError;
+  CanisterError;
+  SysTransient;
+  DestinationInvalid;
+  Unknown;
+  SysFatal;
+  CanisterReject;
+};
 type Result = variant { Ok; Err : ApiError };
 type Result_1 = variant { Ok : EventResponse; Err : ApiError };
-type Result_2 = variant { Ok : record { principal; Privacy }; Err : ApiError };
-type Result_3 = variant { Ok : PagedResponse; Err : ApiError };
-type Result_4 = variant { Ok; Err : bool };
+type Result_2 = variant {
+  Ok : record { CanisterStatusResponse };
+  Err : record { RejectionCode; text };
+};
+type Result_3 = variant { Ok : record { principal; Privacy }; Err : ApiError };
+type Result_4 = variant { Ok : PagedResponse; Err : ApiError };
+type Result_5 = variant { Ok; Err : bool };
 type SortDirection = variant { Asc; Desc };
 type TokenGated = record {
   "principal" : principal;
@@ -154,6 +182,7 @@ service : (principal, text, nat64) -> {
   add_entry_by_parent : (vec nat8) -> (Result);
   add_event : (PostEvent, principal, principal, principal) -> (Result_1);
   cancel_event : (principal, text, principal, principal) -> (Result);
+  canister_status : () -> (Result_2);
   clear_backup : () -> ();
   delete_event : (principal, principal, principal) -> (Result);
   download_chunk : (nat64) -> (record { nat64; vec nat8 }) query;
@@ -166,7 +195,7 @@ service : (principal, text, nat64) -> {
       record { nat64; nat64 },
     ) query;
   get_event : (principal, opt principal) -> (Result_1) query;
-  get_event_privacy_and_owner : (principal, principal) -> (Result_2) query;
+  get_event_privacy_and_owner : (principal, principal) -> (Result_3) query;
   get_events : (
       nat64,
       nat64,
@@ -174,11 +203,11 @@ service : (principal, text, nat64) -> {
       vec EventFilter,
       FilterType,
       opt principal,
-    ) -> (Result_3) query;
+    ) -> (Result_4) query;
   get_events_count : (vec principal) -> (vec record { principal; nat64 }) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
   restore_data : () -> ();
   total_chunks : () -> (nat64) query;
-  update_attendee_count_on_event : (principal, principal, nat64) -> (Result_4);
+  update_attendee_count_on_event : (principal, principal, nat64) -> (Result_5);
   upload_chunk : (record { nat64; vec nat8 }) -> ();
 }

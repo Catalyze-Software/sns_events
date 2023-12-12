@@ -1,6 +1,15 @@
 use candid::Principal;
 
-use ic_cdk::{caller, init, query, update};
+use ic_cdk::{
+    api::{
+        call::RejectionCode,
+        management_canister::{
+            main::{canister_status as _canister_status, CanisterStatusResponse},
+            provisional::CanisterIdRecord,
+        },
+    },
+    caller, id, init, query, update,
+};
 
 use ic_scalable_canister::ic_scalable_misc::{
     enums::api_error_type::ApiError,
@@ -83,4 +92,18 @@ pub fn init(parent: Principal, name: String, identifier: usize) {
     STABLE_DATA.with(|data| {
         ic_methods::init(data, parent, name, identifier);
     })
+}
+
+#[update(guard = "is_monitor")]
+async fn canister_status() -> Result<(CanisterStatusResponse,), (RejectionCode, String)> {
+    _canister_status(CanisterIdRecord { canister_id: id() }).await
+}
+
+pub fn is_monitor() -> Result<(), String> {
+    const OWNERS: [&str; 1] = ["6or45-oyaaa-aaaap-absua-cai"];
+
+    match OWNERS.iter().any(|p| p == &caller().to_string()) {
+        true => Ok(()),
+        false => Err("Unauthorized".to_string()),
+    }
 }
