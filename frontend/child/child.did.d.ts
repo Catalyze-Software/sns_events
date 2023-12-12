@@ -23,6 +23,17 @@ export type ApiError = { 'SerializeError' : ErrorMessage } |
 export type Asset = { 'Url' : string } |
   { 'None' : null } |
   { 'CanisterStorage' : CanisterStorage };
+export interface CanisterStatusResponse {
+  'status' : CanisterStatusType,
+  'memory_size' : bigint,
+  'cycles' : bigint,
+  'settings' : DefiniteCanisterSettings,
+  'idle_cycles_burned_per_day' : bigint,
+  'module_hash' : [] | [Uint8Array | number[]],
+}
+export type CanisterStatusType = { 'stopped' : null } |
+  { 'stopping' : null } |
+  { 'running' : null };
 export type CanisterStorage = { 'None' : null } |
   { 'Manifest' : Manifest } |
   { 'Chunk' : ChunkData };
@@ -32,6 +43,12 @@ export interface ChunkData {
   'index' : bigint,
 }
 export interface DateRange { 'end_date' : bigint, 'start_date' : bigint }
+export interface DefiniteCanisterSettings {
+  'freezing_threshold' : bigint,
+  'controllers' : Array<Principal>,
+  'memory_allocation' : bigint,
+  'compute_allocation' : bigint,
+}
 export interface ErrorMessage {
   'tag' : string,
   'message' : string,
@@ -138,15 +155,24 @@ export type Privacy = { 'Gated' : GatedType } |
   { 'Private' : null } |
   { 'Public' : null } |
   { 'InviteOnly' : null };
+export type RejectionCode = { 'NoError' : null } |
+  { 'CanisterError' : null } |
+  { 'SysTransient' : null } |
+  { 'DestinationInvalid' : null } |
+  { 'Unknown' : null } |
+  { 'SysFatal' : null } |
+  { 'CanisterReject' : null };
 export type Result = { 'Ok' : null } |
   { 'Err' : ApiError };
 export type Result_1 = { 'Ok' : EventResponse } |
   { 'Err' : ApiError };
-export type Result_2 = { 'Ok' : [Principal, Privacy] } |
+export type Result_2 = { 'Ok' : [CanisterStatusResponse] } |
+  { 'Err' : [RejectionCode, string] };
+export type Result_3 = { 'Ok' : [Principal, Privacy] } |
   { 'Err' : ApiError };
-export type Result_3 = { 'Ok' : PagedResponse } |
+export type Result_4 = { 'Ok' : PagedResponse } |
   { 'Err' : ApiError };
-export type Result_4 = { 'Ok' : null } |
+export type Result_5 = { 'Ok' : null } |
   { 'Err' : boolean };
 export type SortDirection = { 'Asc' : null } |
   { 'Desc' : null };
@@ -174,6 +200,7 @@ export interface _SERVICE {
     [Principal, string, Principal, Principal],
     Result
   >,
+  'canister_status' : ActorMethod<[], Result_2>,
   'clear_backup' : ActorMethod<[], undefined>,
   'delete_event' : ActorMethod<[Principal, Principal, Principal], Result>,
   'download_chunk' : ActorMethod<[bigint], [bigint, Uint8Array | number[]]>,
@@ -187,7 +214,7 @@ export interface _SERVICE {
     [Uint8Array | number[], [bigint, bigint]]
   >,
   'get_event' : ActorMethod<[Principal, [] | [Principal]], Result_1>,
-  'get_event_privacy_and_owner' : ActorMethod<[Principal, Principal], Result_2>,
+  'get_event_privacy_and_owner' : ActorMethod<[Principal, Principal], Result_3>,
   'get_events' : ActorMethod<
     [
       bigint,
@@ -197,7 +224,7 @@ export interface _SERVICE {
       FilterType,
       [] | [Principal],
     ],
-    Result_3
+    Result_4
   >,
   'get_events_count' : ActorMethod<
     [Array<Principal>],
@@ -208,7 +235,7 @@ export interface _SERVICE {
   'total_chunks' : ActorMethod<[], bigint>,
   'update_attendee_count_on_event' : ActorMethod<
     [Principal, Principal, bigint],
-    Result_4
+    Result_5
   >,
   'upload_chunk' : ActorMethod<[[bigint, Uint8Array | number[]]], undefined>,
 }
