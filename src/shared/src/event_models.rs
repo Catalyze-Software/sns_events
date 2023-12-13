@@ -1,15 +1,17 @@
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
-use candid::{CandidType, Deserialize, Principal};
-use ic_scalable_misc::{
+use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use ic_scalable_canister::ic_scalable_misc::{
     enums::{
         asset_type::Asset, location_type::Location, privacy_type::Privacy, sort_type::SortDirection,
     },
     models::date_models::DateRange,
+    traits::stable_storage_trait::StableStorableTrait,
 };
+use ic_stable_structures::{storable::Bound, Storable};
 use serde::Serialize;
 
-#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
+#[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct Event {
     pub name: String,
     pub description: String,
@@ -31,6 +33,20 @@ pub struct Event {
     pub metadata: Option<String>,
     pub updated_on: u64,
     pub created_on: u64,
+}
+
+impl StableStorableTrait for Event {}
+
+impl Storable for Event {
+    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 impl Default for Event {
