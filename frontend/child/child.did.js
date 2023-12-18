@@ -135,6 +135,38 @@ export const idlFactory = ({ IDL }) => {
     'is_deleted' : IDL.Bool,
   });
   const Result_1 = IDL.Variant({ 'Ok' : EventResponse, 'Err' : ApiError });
+  const CanisterStatusType = IDL.Variant({
+    'stopped' : IDL.Null,
+    'stopping' : IDL.Null,
+    'running' : IDL.Null,
+  });
+  const DefiniteCanisterSettings = IDL.Record({
+    'freezing_threshold' : IDL.Nat,
+    'controllers' : IDL.Vec(IDL.Principal),
+    'memory_allocation' : IDL.Nat,
+    'compute_allocation' : IDL.Nat,
+  });
+  const CanisterStatusResponse = IDL.Record({
+    'status' : CanisterStatusType,
+    'memory_size' : IDL.Nat,
+    'cycles' : IDL.Nat,
+    'settings' : DefiniteCanisterSettings,
+    'idle_cycles_burned_per_day' : IDL.Nat,
+    'module_hash' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+  });
+  const RejectionCode = IDL.Variant({
+    'NoError' : IDL.Null,
+    'CanisterError' : IDL.Null,
+    'SysTransient' : IDL.Null,
+    'DestinationInvalid' : IDL.Null,
+    'Unknown' : IDL.Null,
+    'SysFatal' : IDL.Null,
+    'CanisterReject' : IDL.Null,
+  });
+  const Result_2 = IDL.Variant({
+    'Ok' : IDL.Tuple(CanisterStatusResponse),
+    'Err' : IDL.Tuple(RejectionCode, IDL.Text),
+  });
   const EventFilter = IDL.Variant({
     'Tag' : IDL.Nat32,
     'UpdatedOn' : DateRange,
@@ -147,7 +179,7 @@ export const idlFactory = ({ IDL }) => {
     'EndDate' : DateRange,
   });
   const FilterType = IDL.Variant({ 'Or' : IDL.Null, 'And' : IDL.Null });
-  const Result_2 = IDL.Variant({
+  const Result_3 = IDL.Variant({
     'Ok' : IDL.Tuple(IDL.Principal, Privacy),
     'Err' : ApiError,
   });
@@ -166,7 +198,7 @@ export const idlFactory = ({ IDL }) => {
     'limit' : IDL.Nat64,
     'number_of_pages' : IDL.Nat64,
   });
-  const Result_3 = IDL.Variant({ 'Ok' : PagedResponse, 'Err' : ApiError });
+  const Result_4 = IDL.Variant({ 'Ok' : PagedResponse, 'Err' : ApiError });
   const HttpRequest = IDL.Record({
     'url' : IDL.Text,
     'method' : IDL.Text,
@@ -179,27 +211,7 @@ export const idlFactory = ({ IDL }) => {
     'body' : IDL.Vec(IDL.Nat8),
     'headers' : IDL.Vec(HttpHeader),
   });
-  const Event = IDL.Record({
-    'updated_on' : IDL.Nat64,
-    'banner_image' : Asset,
-    'group_identifier' : IDL.Principal,
-    'owner' : IDL.Principal,
-    'metadata' : IDL.Opt(IDL.Text),
-    'date' : DateRange,
-    'attendee_count' : IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Nat64)),
-    'name' : IDL.Text,
-    'tags' : IDL.Vec(IDL.Nat32),
-    'description' : IDL.Text,
-    'created_by' : IDL.Principal,
-    'created_on' : IDL.Nat64,
-    'website' : IDL.Text,
-    'privacy' : Privacy,
-    'is_canceled' : IDL.Tuple(IDL.Bool, IDL.Text),
-    'image' : Asset,
-    'location' : Location,
-    'is_deleted' : IDL.Bool,
-  });
-  const Result_4 = IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Bool });
+  const Result_5 = IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Bool });
   return IDL.Service({
     '__get_candid_interface_tmp_hack' : IDL.Func([], [IDL.Text], ['query']),
     'accept_cycles' : IDL.Func([], [IDL.Nat64], []),
@@ -209,12 +221,12 @@ export const idlFactory = ({ IDL }) => {
         [Result_1],
         [],
       ),
-    'backup_data' : IDL.Func([], [IDL.Text], []),
     'cancel_event' : IDL.Func(
         [IDL.Principal, IDL.Text, IDL.Principal, IDL.Principal],
         [Result],
         [],
       ),
+    'canister_status' : IDL.Func([], [Result_2], []),
     'clear_backup' : IDL.Func([], [], []),
     'delete_event' : IDL.Func(
         [IDL.Principal, IDL.Principal, IDL.Principal],
@@ -244,7 +256,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'get_event_privacy_and_owner' : IDL.Func(
         [IDL.Principal, IDL.Principal],
-        [Result_2],
+        [Result_3],
         ['query'],
       ),
     'get_events' : IDL.Func(
@@ -256,7 +268,7 @@ export const idlFactory = ({ IDL }) => {
           FilterType,
           IDL.Opt(IDL.Principal),
         ],
-        [Result_3],
+        [Result_4],
         ['query'],
       ),
     'get_events_count' : IDL.Func(
@@ -265,16 +277,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
-    'migration_add_events' : IDL.Func(
-        [IDL.Vec(IDL.Tuple(IDL.Principal, Event))],
-        [],
-        [],
-      ),
     'restore_data' : IDL.Func([], [], []),
     'total_chunks' : IDL.Func([], [IDL.Nat64], ['query']),
     'update_attendee_count_on_event' : IDL.Func(
         [IDL.Principal, IDL.Principal, IDL.Nat64],
-        [Result_4],
+        [Result_5],
         [],
       ),
     'upload_chunk' : IDL.Func(

@@ -1,34 +1,18 @@
-use std::{collections::HashMap, iter::FromIterator};
-
-use candid::{candid_method, Principal};
-use ic_cdk::caller;
-use ic_cdk_macros::{query, update};
-use ic_scalable_misc::{
+use candid::Principal;
+use ic_cdk::{caller, query, update};
+use ic_scalable_canister::ic_scalable_misc::{
     enums::{api_error_type::ApiError, filter_type::FilterType, privacy_type::Privacy},
     models::paged_response_models::PagedResponse,
 };
 
-use super::store::{Store, DATA};
-use shared::event_models::{Event, EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent};
+use crate::store::STABLE_DATA;
 
-#[update]
-#[candid_method(update)]
-pub fn migration_add_events(events: Vec<(Principal, Event)>) -> () {
-    if caller()
-        == Principal::from_text("ledm3-52ncq-rffuv-6ed44-hg5uo-iicyu-pwkzj-syfva-heo4k-p7itq-aqe")
-            .unwrap()
-    {
-        DATA.with(|data| {
-            data.borrow_mut().current_entry_id = events.clone().len() as u64;
-            data.borrow_mut().entries = HashMap::from_iter(events);
-        })
-    }
-}
+use super::store::Store;
+use shared::event_models::{EventFilter, EventResponse, EventSort, PostEvent, UpdateEvent};
 
 // This method is used to add a event to the canister,
 // The method is async because it optionally creates a new canister
 #[update]
-#[candid_method(update)]
 async fn add_event(
     value: PostEvent,
     group_identifier: Principal,
@@ -45,7 +29,6 @@ async fn add_event(
 
 // This method is used to get an event
 #[query]
-#[candid_method(query)]
 fn get_event(
     identifier: Principal,
     group_identifier: Option<Principal>,
@@ -55,7 +38,6 @@ fn get_event(
 
 // This method is used to get the privacy and owner of an event
 #[query]
-#[candid_method(query)]
 fn get_event_privacy_and_owner(
     identifier: Principal,
     group_identifier: Principal,
@@ -65,7 +47,6 @@ fn get_event_privacy_and_owner(
 
 // This method is used to get events filtered and sorted with pagination
 #[query]
-#[candid_method(query)]
 fn get_events(
     limit: usize,
     page: usize,
@@ -89,14 +70,13 @@ fn get_events(
 // Data serialized and send as byte array chunks ` (bytes, (start_chunk, end_chunk)) `
 // The parent canister can then deserialize the data and pass it to the frontend
 #[query]
-#[candid_method(query)]
 fn get_chunked_data(
     filters: Vec<EventFilter>,
     filter_type: FilterType,
     chunk: usize,
     max_bytes_per_chunk: usize,
 ) -> (Vec<u8>, (usize, usize)) {
-    if caller() != DATA.with(|data| data.borrow().parent) {
+    if caller() != STABLE_DATA.with(|data| data.borrow().get().parent) {
         return (vec![], (0, 0));
     }
 
@@ -105,14 +85,12 @@ fn get_chunked_data(
 
 // This method is used to get the amount of events for a list of groups
 #[query]
-#[candid_method(query)]
 fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
     Store::get_events_count(group_identifiers)
 }
 
 // This method is used to update an existing event
 #[update]
-#[candid_method(update)]
 async fn edit_event(
     identifier: Principal,
     value: UpdateEvent,
@@ -128,7 +106,6 @@ async fn edit_event(
 
 // This method is used to delete an existing event
 #[update]
-#[candid_method(update)]
 async fn delete_event(
     identifier: Principal,
     group_identifier: Principal,
@@ -142,7 +119,6 @@ async fn delete_event(
 
 // This method is used to cancel an event
 #[update]
-#[candid_method(update)]
 async fn cancel_event(
     identifier: Principal,
     reason: String,
@@ -157,7 +133,6 @@ async fn cancel_event(
 
 // This method is used to update the attendee count on an event (inter-canister call)
 #[update]
-#[candid_method(update)]
 pub fn update_attendee_count_on_event(
     event_identifier: Principal,
     event_attendee_canister: Principal,

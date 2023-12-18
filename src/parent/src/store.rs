@@ -6,7 +6,7 @@ use ic_cdk::{
     id,
 };
 
-use ic_scalable_misc::{
+use ic_scalable_canister::ic_scalable_misc::{
     enums::{
         api_error_type::{ApiError, ApiErrorType},
         canister_type::CanisterType,
