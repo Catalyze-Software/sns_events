@@ -12,7 +12,7 @@ use shared::event_models::{EventFilter, EventResponse, EventSort, PostEvent, Upd
 
 // This method is used to add a event to the canister,
 // The method is async because it optionally creates a new canister
-#[update]
+#[update(guard = "auth")]
 async fn add_event(
     value: PostEvent,
     group_identifier: Principal,
@@ -90,7 +90,7 @@ fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)
 }
 
 // This method is used to update an existing event
-#[update]
+#[update(guard = "auth")]
 async fn edit_event(
     identifier: Principal,
     value: UpdateEvent,
@@ -105,7 +105,7 @@ async fn edit_event(
 }
 
 // This method is used to delete an existing event
-#[update]
+#[update(guard = "auth")]
 async fn delete_event(
     identifier: Principal,
     group_identifier: Principal,
@@ -118,7 +118,7 @@ async fn delete_event(
 }
 
 // This method is used to cancel an event
-#[update]
+#[update(guard = "auth")]
 async fn cancel_event(
     identifier: Principal,
     reason: String,
@@ -132,7 +132,7 @@ async fn cancel_event(
 }
 
 // This method is used to update the attendee count on an event (inter-canister call)
-#[update]
+#[update(guard = "auth")]
 pub fn update_attendee_count_on_event(
     event_identifier: Principal,
     event_attendee_canister: Principal,
@@ -147,4 +147,11 @@ pub fn update_attendee_count_on_event(
         );
     }
     return Err(false);
+}
+
+pub fn auth() -> Result<(), String> {
+    match caller() == Principal::anonymous() {
+        true => Err("Unauthorized".to_string()),
+        false => Ok(()),
+    }
 }

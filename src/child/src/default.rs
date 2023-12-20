@@ -1,3 +1,4 @@
+use crate::methods::auth;
 use candid::Principal;
 
 use ic_cdk::{
@@ -27,8 +28,8 @@ use crate::{
 
 // This call get triggered when a new canister is spun up
 // the data is passed along to the new canister as a byte array
-#[update]
-async fn add_entry_by_parent(entry: Vec<u8>) -> Result<(), ApiError> {
+#[update(guard = "auth")]
+fn add_entry_by_parent(entry: Vec<u8>) -> Result<(), ApiError> {
     STABLE_DATA.with(|v| {
         ENTRIES.with(|entries| {
             Data::add_entry_by_parent(
