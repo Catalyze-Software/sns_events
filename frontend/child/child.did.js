@@ -226,6 +226,7 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
+    'canister_backup_data' : IDL.Func([], [IDL.Text, IDL.Text], []),
     'canister_status' : IDL.Func([], [Result_2], []),
     'clear_backup' : IDL.Func([], [], []),
     'delete_event' : IDL.Func(
@@ -234,6 +235,16 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'download_chunk' : IDL.Func(
+        [IDL.Nat64],
+        [IDL.Tuple(IDL.Nat64, IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    'download_entries_chunk' : IDL.Func(
+        [IDL.Nat64],
+        [IDL.Tuple(IDL.Nat64, IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    'download_stable_data_chunk' : IDL.Func(
         [IDL.Nat64],
         [IDL.Tuple(IDL.Nat64, IDL.Vec(IDL.Nat8))],
         ['query'],
@@ -279,6 +290,8 @@ export const idlFactory = ({ IDL }) => {
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'restore_data' : IDL.Func([], [], []),
     'total_chunks' : IDL.Func([], [IDL.Nat64], ['query']),
+    'total_entries_chunks' : IDL.Func([], [IDL.Nat64], ['query']),
+    'total_stable_data_chunks' : IDL.Func([], [IDL.Nat64], ['query']),
     'update_attendee_count_on_event' : IDL.Func(
         [IDL.Principal, IDL.Principal, IDL.Nat64],
         [Result_5],

@@ -200,10 +200,19 @@ export interface _SERVICE {
     [Principal, string, Principal, Principal],
     Result
   >,
+  'canister_backup_data' : ActorMethod<[], [string, string]>,
   'canister_status' : ActorMethod<[], Result_2>,
   'clear_backup' : ActorMethod<[], undefined>,
   'delete_event' : ActorMethod<[Principal, Principal, Principal], Result>,
   'download_chunk' : ActorMethod<[bigint], [bigint, Uint8Array | number[]]>,
+  'download_entries_chunk' : ActorMethod<
+    [bigint],
+    [bigint, Uint8Array | number[]]
+  >,
+  'download_stable_data_chunk' : ActorMethod<
+    [bigint],
+    [bigint, Uint8Array | number[]]
+  >,
   'edit_event' : ActorMethod<
     [Principal, PostEvent, Principal, Principal, Principal],
     Result_1
@@ -233,6 +242,8 @@ export interface _SERVICE {
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'restore_data' : ActorMethod<[], undefined>,
   'total_chunks' : ActorMethod<[], bigint>,
+  'total_entries_chunks' : ActorMethod<[], bigint>,
+  'total_stable_data_chunks' : ActorMethod<[], bigint>,
   'update_attendee_count_on_event' : ActorMethod<
     [Principal, Principal, bigint],
     Result_5
