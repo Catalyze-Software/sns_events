@@ -1,12 +1,13 @@
 {
   "child": {
+    "development": "cnkl6-daaaa-aaaap-abquq-cai",
     "ic": "aaaaa-aa",
     "staging": "7z3mm-maaaa-aaaap-abgfq-cai",
-    "development": "cnkl6-daaaa-aaaap-abquq-cai"
+    "marketing": "dkq5o-cyaaa-aaaap-abxpq-cai"
   },
   "parent": {
+    "development": "cklnk-oyaaa-aaaap-abqua-cai",
     "ic": "762ky-byaaa-aaaap-abgfa-cai",
-    "staging": "762ky-byaaa-aaaap-abgfa-cai",
-    "development": "cklnk-oyaaa-aaaap-abqua-cai"
+    "staging": "762ky-byaaa-aaaap-abgfa-cai"
   }
 }
