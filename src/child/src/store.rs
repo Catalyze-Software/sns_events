@@ -382,22 +382,23 @@ impl Store {
 
     // This method is used to get the events count for a set of groups
     pub fn get_events_count(group_identifiers: Vec<Principal>) -> Vec<(Principal, usize)> {
-        // Initialize the vector that will contain the events count for each group
-        let mut events_counts: Vec<(Principal, usize)> = vec![];
+        // init hashmap Principal, usize from group_identifiers
+        let mut events_counts: HashMap<Principal, usize> = HashMap::from_iter(
+            group_identifiers
+                .iter()
+                .map(|group_identifier| (*group_identifier, 0)),
+        );
 
         ENTRIES.with(|entries| {
             // For each group, we count the number of events
-            for group_identifier in group_identifiers {
-                let count = Data::get_entries(entries)
-                    .into_iter()
-                    .filter(|(_, _event)| &_event.group_identifier == &group_identifier)
-                    .count();
-
-                // We add the group identifier and the count to the vector
-                events_counts.push((group_identifier, count));
-            }
+            entries.borrow().iter().for_each(|(_, event)| {
+                if let Some(existing_value) = events_counts.get_mut(&event.group_identifier) {
+                    *existing_value += 1;
+                }
+            });
         });
-        events_counts
+
+        events_counts.into_iter().collect()
     }
 
     // Used for composite_query calls from the parent canister
