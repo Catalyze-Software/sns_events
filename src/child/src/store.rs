@@ -1,5 +1,8 @@
 use candid::Principal;
-use ic_cdk::api::{call, time};
+use ic_cdk::{
+    api::{call, time},
+    caller,
+};
 use ic_scalable_canister::ic_scalable_misc::{
     enums::{
         api_error_type::{ApiError, ApiErrorType},
@@ -237,6 +240,20 @@ impl Store {
                         None,
                     ));
                 }
+
+                if _event.owner != caller() {
+                    return Err(api_error(
+                        ApiErrorType::Unauthorized,
+                        "UNAUTHORIZED",
+                        "Unauthorized",
+                        STABLE_DATA
+                            .with(|data| Data::get_name(data.borrow().get()))
+                            .as_str(),
+                        "delete_event",
+                        None,
+                    ));
+                }
+
                 // Set the is_deleted flag to true
                 _event.is_deleted = true;
 
