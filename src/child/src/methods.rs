@@ -106,15 +106,12 @@ async fn edit_event(
 
 // This method is used to delete an existing event
 #[update(guard = "auth")]
-async fn delete_event(
+fn delete_event(
     identifier: Principal,
     group_identifier: Principal,
-    member_identifier: Principal,
+    _member_identifier: Principal,
 ) -> Result<(), ApiError> {
-    match Store::can_delete(caller(), identifier, group_identifier, member_identifier).await {
-        Ok(_caller) => Store::delete_event(identifier, group_identifier),
-        Err(err) => Err(err),
-    }
+    Store::delete_event(identifier, group_identifier)
 }
 
 // This method is used to cancel an event
