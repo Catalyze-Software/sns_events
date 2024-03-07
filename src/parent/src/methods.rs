@@ -1,6 +1,5 @@
-use candid::candid_method;
 use ic_cdk::query;
-use ic_scalable_misc::{
+use ic_scalable_canister::ic_scalable_misc::{
     enums::filter_type::FilterType, models::paged_response_models::PagedResponse,
 };
 
@@ -11,8 +10,8 @@ use super::store::ScalableData;
 // Method used to get all the events from the child canisters filtered, sorted and paged
 // requires composite queries to be released to mainnet
 // TODO: Add group identifier
-#[query(composite = true)]
-#[candid_method(query)]
+// #[query(composite = true)]
+#[query]
 async fn get_events(
     limit: usize,
     page: usize,
